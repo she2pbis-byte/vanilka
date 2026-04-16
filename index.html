@@ -177,7 +177,6 @@
             overflow: visible;
         }
 
-        /* Улучшенная плавная улыбка через CSS transition */
         .mouth-path {
             fill: none;
             stroke: var(--stroke);
@@ -254,10 +253,13 @@
             background-color: var(--body-outer); border: var(--stroke-width) solid var(--stroke);
         }
 
+        /* Стопа в форме овода (яйцевидная), узкой стороной вниз */
         .leg::after {
-            content: ''; position: absolute; bottom: -38px; left: 50%; transform: translateX(-50%);
-            width: 36px; height: 48px; background-color: var(--body-inner);
-            border: var(--stroke-width) solid var(--stroke); border-radius: 50%;
+            content: ''; position: absolute; bottom: -44px; left: 50%; transform: translateX(-50%);
+            width: 38px; height: 52px; background-color: var(--body-inner);
+            border: var(--stroke-width) solid var(--stroke); 
+            /* Создание овода через border-radius: широкое сверху, узкое снизу */
+            border-radius: 50% 50% 40% 40% / 40% 40% 60% 60%;
         }
 
         @keyframes lookAround {
@@ -333,7 +335,6 @@
             
             let isAnimating = false;
 
-            // Константы путей
             const MOUTH_NEUTRAL = "M 0,10 L 56,10";
             const MOUTH_SMILE = "M 0,5 Q 28,25 56,5";
 
@@ -359,29 +360,20 @@
                 bodyMain.classList.remove('body-breath-active');
             }
 
-            // ПРИВЕТСТВИЕ И ПЛАВНАЯ УЛЫБКА
             bodyMain.addEventListener('click', (e) => {
                 if (e.target.closest('.arm') || isAnimating) return;
                 isAnimating = true;
                 interruptBreath();
-                
                 leftArm.classList.add('animate-wave-hello');
-                
-                // Плавно меняем путь SVG для улыбки
                 mouthPath.setAttribute('d', MOUTH_SMILE);
-                
                 pupils.forEach(p => {
                     p.style.animation = 'none';
                     void p.offsetHeight;
                     p.classList.add('animate-look-hello');
                 });
-                
                 setTimeout(() => {
                     leftArm.classList.remove('animate-wave-hello');
-                    
-                    // Плавно возвращаем в нейтральное состояние
                     mouthPath.setAttribute('d', MOUTH_NEUTRAL);
-                    
                     pupils.forEach(p => {
                         p.classList.remove('animate-look-hello');
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
@@ -390,7 +382,6 @@
                 }, 1500);
             });
 
-            // РОСТ РУКИ
             rightArm.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating) return;
@@ -403,30 +394,24 @@
                 }, 1100); 
             });
 
-            // ПРЫЖОК
             legsContainer.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating) return;
                 isAnimating = true;
                 interruptBreath();
-
                 bodyMain.classList.add('animate-jump');
                 legsContainer.classList.add('animate-leg-jump');
-                
                 tildaContainer.classList.add('animate-tilda-jump');
                 mouthSvg.classList.add('animate-mouth-jump');
-                
                 pupils.forEach(p => {
                     p.style.animation = 'none';
                     void p.offsetHeight;
                     p.classList.add('animate-look-tilda-jump');
                 });
-
                 setTimeout(() => {
                     bodyMain.classList.remove('animate-jump');
                     legsContainer.classList.remove('animate-leg-jump');
                 }, 800);
-
                 setTimeout(() => {
                     tildaContainer.classList.remove('animate-tilda-jump');
                     mouthSvg.classList.remove('animate-mouth-jump');
