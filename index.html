@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: умная анимация дыхания</title>
+    <title>Геометрический персонаж: плавная улыбка</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -121,8 +121,20 @@
             100% { transform: translateY(0) scale(1, 1); }
         }
 
+        @keyframes legJump {
+            0% { transform: translateY(0) scale(1, 1); }
+            15% { transform: translateY(0) scale(1.1, 0.9); }
+            45% { transform: translateY(-55px) scale(0.95, 1.05); }
+            75% { transform: translateY(0) scale(1.05, 0.95); }
+            100% { transform: translateY(0) scale(1, 1); }
+        }
+
         .animate-jump {
             animation: jump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
+        }
+
+        .animate-leg-jump {
+            animation: legJump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
         }
 
         .face-area {
@@ -162,16 +174,16 @@
         .mouth-svg {
             width: 56px;
             height: 20px;
-            transition: all 0.3s ease;
             overflow: visible;
         }
 
+        /* Улучшенная плавная улыбка через CSS transition */
         .mouth-path {
             fill: none;
             stroke: var(--stroke);
             stroke-width: 2px;
             stroke-linecap: round;
-            transition: d 0.3s ease;
+            transition: d 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         @keyframes mouthStretch {
@@ -292,7 +304,7 @@
                     <div class="eye"><div class="pupil"></div></div>
                 </div>
                 <svg class="mouth-svg" viewBox="0 0 56 20">
-                    <path id="mouthPath" class="mouth-path" d="M 0,10 L 56,10" />
+                    <path id="mouthPath" class="mouth-path" d="M 0,10 L 56,10"></path>
                 </svg>
             </div>
 
@@ -319,22 +331,18 @@
             const rightArm = document.getElementById('rightArm');
             const pupils = document.querySelectorAll('.pupil');
             
-            let isAnimating = false; // Флаг любой активной анимации по тапу
+            let isAnimating = false;
 
-            const STRAIGHT_PATH = "M 0,10 L 56,10";
-            const SMILE_PATH = "M 0,5 Q 28,25 56,5";
+            // Константы путей
+            const MOUTH_NEUTRAL = "M 0,10 L 56,10";
+            const MOUTH_SMILE = "M 0,5 Q 28,25 56,5";
 
-            // Функция запуска дыхания
             function triggerBreath() {
-                // ПРАВИЛО: Не начинать дыхание, если идет активная анимация тапа
                 if (isAnimating) { 
                     scheduleNextBreath(); 
                     return; 
                 }
-                
                 bodyMain.classList.add('body-breath-active');
-                
-                // Слушатель завершения дыхания
                 setTimeout(() => {
                     bodyMain.classList.remove('body-breath-active');
                     scheduleNextBreath();
@@ -347,29 +355,33 @@
             
             scheduleNextBreath();
 
-            // Функция прерывания дыхания при тапе
             function interruptBreath() {
                 bodyMain.classList.remove('body-breath-active');
             }
 
-            // ПРИВЕТСТВИЕ И УЛЫБКА
+            // ПРИВЕТСТВИЕ И ПЛАВНАЯ УЛЫБКА
             bodyMain.addEventListener('click', (e) => {
                 if (e.target.closest('.arm') || isAnimating) return;
                 isAnimating = true;
                 interruptBreath();
                 
                 leftArm.classList.add('animate-wave-hello');
-                mouthPath.setAttribute('d', SMILE_PATH);
+                
+                // Плавно меняем путь SVG для улыбки
+                mouthPath.setAttribute('d', MOUTH_SMILE);
                 
                 pupils.forEach(p => {
                     p.style.animation = 'none';
                     void p.offsetHeight;
                     p.classList.add('animate-look-hello');
                 });
-
+                
                 setTimeout(() => {
                     leftArm.classList.remove('animate-wave-hello');
-                    mouthPath.setAttribute('d', STRAIGHT_PATH);
+                    
+                    // Плавно возвращаем в нейтральное состояние
+                    mouthPath.setAttribute('d', MOUTH_NEUTRAL);
+                    
                     pupils.forEach(p => {
                         p.classList.remove('animate-look-hello');
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
@@ -384,7 +396,6 @@
                 if (isAnimating) return;
                 isAnimating = true;
                 interruptBreath();
-
                 rightArm.classList.add('animate-right-arm-grow');
                 setTimeout(() => {
                     rightArm.classList.remove('animate-right-arm-grow');
@@ -400,6 +411,8 @@
                 interruptBreath();
 
                 bodyMain.classList.add('animate-jump');
+                legsContainer.classList.add('animate-leg-jump');
+                
                 tildaContainer.classList.add('animate-tilda-jump');
                 mouthSvg.classList.add('animate-mouth-jump');
                 
@@ -411,6 +424,7 @@
 
                 setTimeout(() => {
                     bodyMain.classList.remove('animate-jump');
+                    legsContainer.classList.remove('animate-leg-jump');
                 }, 800);
 
                 setTimeout(() => {
