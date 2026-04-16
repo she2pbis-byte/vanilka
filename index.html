@@ -136,7 +136,6 @@
             position: relative; overflow: hidden; 
         }
 
-        /* Веки: скорость анимации уменьшена в 1.5 раза (с 0.033s до 0.05s) */
         .eye::after {
             content: '';
             position: absolute;
@@ -320,26 +319,20 @@
             const IDLE_TIME = 30000; 
             const MOUTH_NEUTRAL = "M 0,10 L 56,10";
             const MOUTH_SMILE = "M 0,5 Q 28,25 56,5";
+            const MOUTH_SAD = "M 0,15 Q 28,0 56,15"; // Изгиб вниз (грусть)
 
-            // Функция моргания
             function blink() {
-                // ПРОВЕРКА: Не моргать, если идет любая активная анимация или персонаж ушел
                 if (isGone || isAnimating) {
                     setTimeout(blink, 1000);
                     return;
                 }
-
-                // Само моргание (скорость уменьшена в 1.5 раза: 0.05s)
                 eyes.forEach(eye => eye.classList.add('blink'));
                 setTimeout(() => {
                     eyes.forEach(eye => eye.classList.remove('blink'));
-                }, 70); // Чуть больше времени на закрытое состояние для плавности
-                
-                // Интервал между морганиями (остался из прошлой версии)
+                }, 70); 
                 const nextBlinkInterval = (Math.random() * 8000 + 4000);
                 setTimeout(blink, nextBlinkInterval);
             }
-            // Запуск цикла моргания
             setTimeout(blink, 2000);
 
             function bringBackSteps() {
@@ -486,6 +479,9 @@
                 tildaContainer.classList.add('animate-tilda-jump');
                 leftArm.classList.add('animate-jump-arms');
                 rightArm.classList.add('animate-jump-arms');
+                
+                // Рот становится грустным во время прыжка
+                mouthPath.setAttribute('d', MOUTH_SAD);
 
                 pupils.forEach(p => {
                     p.style.animation = 'none';
@@ -503,6 +499,8 @@
 
                 setTimeout(() => {
                     tildaContainer.classList.remove('animate-tilda-jump');
+                    // Возвращаем нейтральный рот
+                    mouthPath.setAttribute('d', MOUTH_NEUTRAL);
                     pupils.forEach(p => {
                         p.classList.remove('animate-look-jump');
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
