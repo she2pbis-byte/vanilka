@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: рот-линия выше</title>
+    <title>Геометрический персонаж: умная анимация дыхания</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -33,7 +33,6 @@
             transform-origin: center;
         }
 
-        /* Контейнер тильды */
         .tilda-container {
             position: absolute;
             top: -10px;
@@ -48,7 +47,6 @@
             pointer-events: none;
         }
 
-        /* Анимации прыжка тильды и взгляда */
         @keyframes tildaJumpFixedStart {
             0% { transform: translateY(0) rotate(0deg) translateX(0); }
             5% { transform: translateY(5px) rotate(0deg) translateX(0); }
@@ -145,7 +143,7 @@
         .eyes-row {
             display: flex;
             gap: 18px;
-            margin-bottom: 10px; /* Было 25px, уменьшено на 15px чтобы поднять рот */
+            margin-bottom: 10px; 
         }
 
         .eye {
@@ -161,7 +159,6 @@
             overflow: hidden; 
         }
 
-        /* Рот в виде SVG линии */
         .mouth-svg {
             width: 56px;
             height: 20px;
@@ -294,7 +291,6 @@
                     <div class="eye"><div class="pupil"></div></div>
                     <div class="eye"><div class="pupil"></div></div>
                 </div>
-                <!-- Рот в виде SVG линии (поднят за счет уменьшения margin у глаз) -->
                 <svg class="mouth-svg" viewBox="0 0 56 20">
                     <path id="mouthPath" class="mouth-path" d="M 0,10 L 56,10" />
                 </svg>
@@ -323,30 +319,47 @@
             const rightArm = document.getElementById('rightArm');
             const pupils = document.querySelectorAll('.pupil');
             
-            let isAnimating = false;
+            let isAnimating = false; // Флаг любой активной анимации по тапу
 
-            // Константы путей рта
             const STRAIGHT_PATH = "M 0,10 L 56,10";
             const SMILE_PATH = "M 0,5 Q 28,25 56,5";
 
+            // Функция запуска дыхания
             function triggerBreath() {
-                if (isAnimating) { scheduleNextBreath(); return; }
+                // ПРАВИЛО: Не начинать дыхание, если идет активная анимация тапа
+                if (isAnimating) { 
+                    scheduleNextBreath(); 
+                    return; 
+                }
+                
                 bodyMain.classList.add('body-breath-active');
+                
+                // Слушатель завершения дыхания
                 setTimeout(() => {
                     bodyMain.classList.remove('body-breath-active');
                     scheduleNextBreath();
                 }, 3000);
             }
-            function scheduleNextBreath() { setTimeout(triggerBreath, Math.random() * 7000 + 5000); }
+
+            function scheduleNextBreath() { 
+                setTimeout(triggerBreath, Math.random() * 5000 + 3000); 
+            }
+            
             scheduleNextBreath();
 
+            // Функция прерывания дыхания при тапе
+            function interruptBreath() {
+                bodyMain.classList.remove('body-breath-active');
+            }
+
+            // ПРИВЕТСТВИЕ И УЛЫБКА
             bodyMain.addEventListener('click', (e) => {
                 if (e.target.closest('.arm') || isAnimating) return;
                 isAnimating = true;
+                interruptBreath();
                 
-                // Активация приветствия
                 leftArm.classList.add('animate-wave-hello');
-                mouthPath.setAttribute('d', SMILE_PATH); // Улыбка
+                mouthPath.setAttribute('d', SMILE_PATH);
                 
                 pupils.forEach(p => {
                     p.style.animation = 'none';
@@ -356,7 +369,7 @@
 
                 setTimeout(() => {
                     leftArm.classList.remove('animate-wave-hello');
-                    mouthPath.setAttribute('d', STRAIGHT_PATH); // Возврат к прямой линии
+                    mouthPath.setAttribute('d', STRAIGHT_PATH);
                     pupils.forEach(p => {
                         p.classList.remove('animate-look-hello');
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
@@ -365,10 +378,13 @@
                 }, 1500);
             });
 
+            // РОСТ РУКИ
             rightArm.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating) return;
                 isAnimating = true;
+                interruptBreath();
+
                 rightArm.classList.add('animate-right-arm-grow');
                 setTimeout(() => {
                     rightArm.classList.remove('animate-right-arm-grow');
@@ -376,10 +392,12 @@
                 }, 1100); 
             });
 
+            // ПРЫЖОК
             legsContainer.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating) return;
                 isAnimating = true;
+                interruptBreath();
 
                 bodyMain.classList.add('animate-jump');
                 tildaContainer.classList.add('animate-tilda-jump');
