@@ -55,7 +55,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1;
-            transform-origin: center center;
+            transform-origin: center bottom;
             animation: tildaSwing 6s infinite ease-in-out;
             pointer-events: none;
         }
@@ -65,14 +65,17 @@
             50% { transform: rotate(-3deg); }
         }
 
-        /* Прыжок тильды: вверх на 120px быстро, вниз медленно */
-        @keyframes tildaCustomJump {
-            0% { transform: translateY(0); }
-            25% { transform: translateY(-120px); } /* Подъем (этап 1) */
-            100% { transform: translateY(0); }     /* Спуск (этап 2 - в 3 раза дольше) */
+        @keyframes tildaJumpWithWobble {
+            0% { transform: translateY(0) rotate(0deg); }
+            15% { transform: translateY(-120px) rotate(0deg); } 
+            35% { transform: translateY(-60px) rotate(-10deg); } 
+            55% { transform: translateY(-30px) rotate(8deg); }  
+            75% { transform: translateY(-10px) rotate(-5deg); } 
+            90% { transform: translateY(-2px) rotate(2deg); }   
+            100% { transform: translateY(0) rotate(0deg); }     
         }
         .animate-tilda-jump {
-            animation: tildaCustomJump 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+            animation: tildaJumpWithWobble 1.8s ease-out forwards !important;
         }
 
         /* --- Тело --- */
@@ -102,7 +105,6 @@
             40% { transform: scale(1.06); } 
         }
 
-        /* Тело прыгает на 120px */
         @keyframes bodyJump {
             0% { transform: translateY(0); }
             25% { transform: translateY(-120px); }
@@ -110,7 +112,7 @@
         }
         .animate-jump { animation: bodyJump 0.9s ease-out forwards !important; }
 
-        /* --- Лицо --- */
+        /* --- Лицо и Глаза --- */
         .face-area {
             width: 154px;
             height: 154px;
@@ -133,6 +135,25 @@
             display: flex; justify-content: center; align-items: center;
             position: relative; overflow: hidden; 
         }
+
+        /* Веки: скорость анимации уменьшена в 1.5 раза (с 0.033s до 0.05s) */
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background-color: var(--body-inner);
+            border-bottom: 2px solid var(--stroke);
+            z-index: 10;
+            transition: height 0.05s ease-in-out;
+        }
+
+        .eye.blink::after {
+            height: 100%;
+        }
+
         .mouth-svg { width: 56px; height: 20px; overflow: visible; }
         .mouth-path {
             fill: none; stroke: var(--stroke); stroke-width: 2px; stroke-linecap: round;
@@ -159,7 +180,6 @@
         .arm-left { left: -18px; z-index: 20; transform: translateY(-50%) rotate(10deg); }
         .arm-right { right: -18px; z-index: 20; transform: translateY(-50%) rotate(-10deg); }
 
-        /* Анимация разведения рук при прыжке */
         @keyframes armsSpread {
             0% { transform: translateY(-50%) rotate(var(--rot-init)); }
             25% { transform: translateY(-50%) rotate(var(--rot-spread)); }
@@ -206,7 +226,6 @@
             border-radius: 50% 50% 40% 40% / 40% 40% 60% 60%;
         }
 
-        /* Ноги прыгают на 60px */
         @keyframes legJumpCustom {
             0% { transform: translateY(0); }
             25% { transform: translateY(-60px); }
@@ -221,6 +240,17 @@
         }
         .animate-look-hello { animation: lookStraightAndBig 1.5s ease-in-out forwards !important; }
         @keyframes lookStraightAndBig { 0%, 100% { transform: scale(1); } 20%, 80% { transform: scale(1.3); } }
+
+        @keyframes lookAtTildaJump {
+            0% { transform: translateY(0); }
+            15% { transform: translateY(-10px); } 
+            35% { transform: translateY(-6px) translateX(-4px); } 
+            55% { transform: translateY(-4px) translateX(4px); }  
+            75% { transform: translateY(-2px) translateX(-2px); } 
+            90% { transform: translateY(-1px) translateX(1px); } 
+            100% { transform: translateY(0) translateX(0); }
+        }
+        .animate-look-jump { animation: lookAtTildaJump 1.8s ease-out forwards !important; }
 
     </style>
 </head>
@@ -247,8 +277,8 @@
             
             <div class="face-area" id="faceArea">
                 <div class="eyes-row">
-                    <div class="eye"><div class="pupil"></div></div>
-                    <div class="eye"><div class="pupil"></div></div>
+                    <div class="eye" id="eyeLeft"><div class="pupil"></div></div>
+                    <div class="eye" id="eyeRight"><div class="pupil"></div></div>
                 </div>
                 <svg class="mouth-svg" viewBox="0 0 56 20">
                     <path id="mouthPath" class="mouth-path" d="M 0,10 L 56,10"></path>
@@ -279,6 +309,7 @@
             const leftArm = document.getElementById('leftArm');
             const rightArm = document.getElementById('rightArm');
             const pupils = document.querySelectorAll('.pupil');
+            const eyes = document.querySelectorAll('.eye');
             
             let isAnimating = false;
             let isGone = false; 
@@ -289,6 +320,27 @@
             const IDLE_TIME = 30000; 
             const MOUTH_NEUTRAL = "M 0,10 L 56,10";
             const MOUTH_SMILE = "M 0,5 Q 28,25 56,5";
+
+            // Функция моргания
+            function blink() {
+                // ПРОВЕРКА: Не моргать, если идет любая активная анимация или персонаж ушел
+                if (isGone || isAnimating) {
+                    setTimeout(blink, 1000);
+                    return;
+                }
+
+                // Само моргание (скорость уменьшена в 1.5 раза: 0.05s)
+                eyes.forEach(eye => eye.classList.add('blink'));
+                setTimeout(() => {
+                    eyes.forEach(eye => eye.classList.remove('blink'));
+                }, 70); // Чуть больше времени на закрытое состояние для плавности
+                
+                // Интервал между морганиями (остался из прошлой версии)
+                const nextBlinkInterval = (Math.random() * 8000 + 4000);
+                setTimeout(blink, nextBlinkInterval);
+            }
+            // Запуск цикла моргания
+            setTimeout(blink, 2000);
 
             function bringBackSteps() {
                 if (animationTimeoutId) clearTimeout(animationTimeoutId);
@@ -306,7 +358,7 @@
                 legLeft.classList.remove('animate-walk-left-fast', 'animate-walk-left-slow');
                 legRight.classList.remove('animate-walk-right-fast', 'animate-walk-right-slow');
                 pupils.forEach(p => {
-                    p.classList.remove('animate-look-hello');
+                    p.classList.remove('animate-look-hello', 'animate-look-jump');
                     p.style.animation = 'lookAround 8s infinite ease-in-out';
                 });
                 isAnimating = false;
@@ -371,6 +423,7 @@
             scheduleNextBreath();
             function interruptBreath() { bodyMain.classList.remove('body-breath-active'); }
 
+            // ОБРАБОТЧИК: Приветствие
             bodyMain.addEventListener('click', (e) => {
                 if (e.target.closest('.arm') || isAnimating || isGone) return;
                 isAnimating = true;
@@ -382,6 +435,7 @@
                     void p.offsetHeight;
                     p.classList.add('animate-look-hello');
                 });
+                
                 setTimeout(() => {
                     leftArm.classList.remove('animate-wave-hello');
                     mouthPath.setAttribute('d', MOUTH_NEUTRAL);
@@ -394,26 +448,38 @@
                 }, 1500);
             });
 
+            // ОБРАБОТЧИК: Правая рука
             rightArm.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating || isGone) return;
                 isAnimating = true;
                 interruptBreath();
+                
                 rightArm.classList.add('animate-right-arm-grow');
+                pupils.forEach(p => {
+                    p.style.animation = 'none';
+                    void p.offsetHeight;
+                    p.classList.add('animate-look-hello');
+                });
+                
                 setTimeout(() => {
                     rightArm.classList.remove('animate-right-arm-grow');
+                    pupils.forEach(p => {
+                        p.classList.remove('animate-look-hello');
+                        p.style.animation = 'lookAround 8s infinite ease-in-out';
+                    });
                     isAnimating = false;
                     resetIdleTimer();
                 }, 900);
             });
 
+            // ОБРАБОТЧИК: Прыжок
             legsContainer.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating || isGone) return;
                 isAnimating = true;
                 interruptBreath();
 
-                // Применяем новые анимации прыжка с увеличенной высотой
                 bodyMain.classList.add('animate-jump');
                 legLeft.classList.add('animate-leg-jump');
                 legRight.classList.add('animate-leg-jump');
@@ -421,20 +487,29 @@
                 leftArm.classList.add('animate-jump-arms');
                 rightArm.classList.add('animate-jump-arms');
 
-                // Очистка анимаций после завершения
+                pupils.forEach(p => {
+                    p.style.animation = 'none';
+                    void p.offsetHeight;
+                    p.classList.add('animate-look-jump');
+                });
+
                 setTimeout(() => {
                     bodyMain.classList.remove('animate-jump');
                     legLeft.classList.remove('animate-leg-jump');
                     legRight.classList.remove('animate-leg-jump');
                     leftArm.classList.remove('animate-jump-arms');
                     rightArm.classList.remove('animate-jump-arms');
-                }, 900); // Тело приземляется чуть позже обычного из-за высоты
+                }, 900);
 
                 setTimeout(() => {
                     tildaContainer.classList.remove('animate-tilda-jump');
+                    pupils.forEach(p => {
+                        p.classList.remove('animate-look-jump');
+                        p.style.animation = 'lookAround 8s infinite ease-in-out';
+                    });
                     isAnimating = false;
                     resetIdleTimer();
-                }, 1400); // Тильда плавно спускается дольше всех
+                }, 1800); 
             });
         };
     </script>
