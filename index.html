@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: прыжок с взглядом вверх</title>
+    <title>Геометрический персонаж: Динамический взгляд</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -42,38 +42,58 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 15;
+            z-index: 1;
             transform-origin: center center;
-            animation: tildaSwingCustom 6s infinite ease-in-out;
+            animation: tildaSwing 6s infinite ease-in-out;
+            pointer-events: none;
         }
 
-        @keyframes tildaSwingCustom {
-            0%, 100% { transform: rotate(0deg) translateY(0); }
-            15% { transform: rotate(-9deg) translateY(-5px); }
-            16.6% { transform: rotate(-9deg) translateY(-5px); } 
-            50% { transform: rotate(0deg) translateY(0); }
-            65% { transform: rotate(9deg) translateY(-5px); }
-            66.6% { transform: rotate(9deg) translateY(-5px); }
+        /* Анимация прыжка тильды */
+        @keyframes tildaJumpFixedStart {
+            0% { transform: translateY(0) rotate(0deg) translateX(0); }
+            5% { transform: translateY(5px) rotate(0deg) translateX(0); }
+            15% { transform: translateY(-110px) rotate(0deg) translateX(0); } 
+            25% { transform: translateY(-100px) translateX(45px) rotate(-15deg); }
+            29% { transform: translateY(-95px) translateX(45px) rotate(-15deg); }
+            38% { transform: translateY(-80px) translateX(-40px) rotate(15deg); }
+            42% { transform: translateY(-75px) translateX(-40px) rotate(15deg); }
+            52% { transform: translateY(-60px) translateX(30px) rotate(-12deg); }
+            56% { transform: translateY(-56px) translateX(30px) rotate(-12deg); }
+            68% { transform: translateY(-40px) translateX(-20px) rotate(10deg); }
+            72% { transform: translateY(-37px) translateX(-20px) rotate(10deg); }
+            82% { transform: translateY(-20px) translateX(10px) rotate(-6deg); }
+            86% { transform: translateY(-17px) translateX(10px) rotate(-6deg); }
+            94% { transform: translateY(-5px) translateX(-3px) rotate(3deg); }
+            97% { transform: translateY(-2px) translateX(-3px) rotate(3deg); }
+            100% { transform: translateY(0) rotate(0deg) translateX(0); }
         }
 
-        /* Физика прыжка тильды: подъем синхронен, спуск в 3 раза медленнее */
-        @keyframes tildaJumpPhysics {
-            0% { transform: translateY(0); }
-            18.75% { transform: translateY(8px); } /* Приседание синхронно с телом */
-            56.25% { transform: translateY(-110px); } /* Пик прыжка синхронно с телом */
-            100% { transform: translateY(-73px); } /* Медленный спуск (1/3 пути за время падения тела) */
+        .animate-tilda-jump {
+            animation: tildaJumpFixedStart 2.4s linear forwards !important;
         }
 
-        /* Возврат тильды после приземления тела */
-        @keyframes tildaReturn {
-            0% { transform: translateY(-73px); }
-            100% { transform: translateY(0); }
+        /* Анимация зрачков: слежение за тильдой во время прыжка */
+        @keyframes lookAtTildaJump {
+            0% { transform: translate(0, 0); }
+            5% { transform: translate(0, 2px); }
+            15% { transform: translate(0, -12px); } /* Глаза резко вверх за тильдой */
+            25% { transform: translate(6px, -10px); } /* Глаза вправо за тильдой */
+            42% { transform: translate(-6px, -8px); } /* Глаза влево за тильдой */
+            56% { transform: translate(4px, -6px); }
+            72% { transform: translate(-3px, -4px); }
+            86% { transform: translate(2px, -2px); }
+            100% { transform: translate(0, 0); }
         }
 
-        .animate-tilda-physics { animation: tildaJumpPhysics 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards !important; }
-        .animate-tilda-return { animation: tildaReturn 0.8s ease-out forwards !important; }
+        .animate-look-tilda-jump {
+            animation: lookAtTildaJump 2.4s linear forwards !important;
+        }
 
-        /* Тело */
+        .tilda-svg {
+            width: 100%;
+            height: 100%;
+        }
+
         .body-main {
             position: relative;
             margin-top: 25px; 
@@ -88,29 +108,61 @@
             z-index: 10;
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .body-breath-active {
+            animation: bodyBreathAnimation 3s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+        }
+
+        @keyframes bodyBreathAnimation {
+            0%, 100% { transform: scale(1); }
+            40% { transform: scale(1.06); } 
+            55% { transform: scale(1.055); } 
         }
 
         @keyframes jump {
             0% { transform: translateY(0) scale(1, 1); }
-            15% { transform: translateY(8px) scale(1.15, 0.85); } 
-            45% { transform: translateY(-110px) scale(0.9, 1.1); } 
-            75% { transform: translateY(0) scale(1.1, 0.9); } 
+            15% { transform: translateY(5px) scale(1.1, 0.9); }
+            45% { transform: translateY(-110px) scale(0.9, 1.1); }
+            75% { transform: translateY(0) scale(1.05, 0.95); }
             100% { transform: translateY(0) scale(1, 1); }
         }
 
-        .animate-jump { animation: jump 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) !important; }
-
-        /* Взгляд вверх на тильду во время её падения */
-        @keyframes lookUpAtTilda {
-            0% { transform: translate(0, 0); }
-            20% { transform: translate(0, -8px); } /* Глаза следят за улетающей тильдой */
-            50% { transform: translate(0, -12px); } /* Максимально вверх, когда тело упало, а тильда еще нет */
-            100% { transform: translate(0, 0); }
+        @keyframes legsJump {
+            0% { transform: translateY(0); }
+            15% { transform: translateY(5px); }
+            45% { transform: translateY(-55px); }
+            75% { transform: translateY(0); }
+            100% { transform: translateY(0); }
         }
 
-        .animate-look-up { animation: lookUpAtTilda 1.6s ease-out forwards !important; }
+        @keyframes leftArmJump {
+            0%, 100% { transform: translateY(-50%) rotate(10deg); }
+            45% { transform: translateY(-50%) rotate(45deg); }
+        }
 
-        /* Лицо */
+        @keyframes rightArmJump {
+            0%, 100% { transform: translateY(-50%) rotate(-10deg); }
+            45% { transform: translateY(-50%) rotate(-45deg); }
+        }
+
+        .animate-jump {
+            animation: jump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
+        }
+
+        .animate-legs-jump {
+            animation: legsJump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
+        }
+
+        .animate-left-arm-jump {
+            animation: leftArmJump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
+        }
+
+        .animate-right-arm-jump {
+            animation: rightArmJump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
+        }
+
         .face-area {
             width: 154px;
             height: 154px;
@@ -123,9 +175,142 @@
             padding-top: 25px;
             position: relative;
             overflow: hidden;
+            z-index: 2;
         }
 
-        .eyes-row { display: flex; gap: 18px; margin-bottom: 8px; }
+        .eyes-row {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 8px;
+        }
+
+        .arm {
+            position: absolute;
+            width: 26px;
+            height: 100px;
+            top: 75%;
+            transition: transform 0.3s ease;
+            pointer-events: auto;
+            transform-origin: top center; 
+        }
+
+        .arm div {
+            vector-effect: non-scaling-stroke;
+        }
+
+        .arm-sleeve {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 35px;
+            background-color: var(--body-outer);
+            border: var(--stroke-width) solid var(--stroke);
+            z-index: 5;
+        }
+
+        .arm-left {
+            left: -18px; 
+            z-index: 20; 
+            transform: translateY(-50%) rotate(10deg);
+            cursor: default;
+        }
+
+        @keyframes waveHello {
+            0% { transform: translateY(-50%) rotate(10deg); }
+            20% { transform: translateY(-50%) rotate(150deg); }
+            35% { transform: translateY(-50%) rotate(130deg); }
+            50% { transform: translateY(-50%) rotate(150deg); }
+            65% { transform: translateY(-50%) rotate(130deg); }
+            80% { transform: translateY(-50%) rotate(150deg); }
+            100% { transform: translateY(-50%) rotate(10deg); }
+        }
+
+        @keyframes rightArmGrowSpeedyReturn {
+            0% { transform: translateY(-50%) rotate(-10deg) scale(1); z-index: 20; }
+            1% { z-index: 100; } 
+            60% { transform: translateY(-50%) rotate(180deg) scale(1.5); } 
+            85% { transform: translateY(-50%) rotate(180deg) scale(1.5); } 
+            99% { z-index: 100; }
+            100% { transform: translateY(-50%) rotate(-10deg) scale(1); z-index: 20; }  
+        }
+
+        .animate-right-arm-grow {
+            animation: rightArmGrowSpeedyReturn 1.1s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        .fork-base {
+            position: absolute;
+            top: 33px;
+            left: 0;
+            width: 100%;
+            height: 41px; 
+            background-color: var(--body-inner);
+            border-left: var(--stroke-width) solid var(--stroke);
+            border-right: var(--stroke-width) solid var(--stroke);
+            z-index: 4;
+        }
+
+        .fork-tines {
+            position: absolute;
+            top: 72px; 
+            left: 0;
+            width: 100%;
+            height: 26px; 
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tine {
+            width: 6px;
+            height: 100%;
+            background-color: var(--body-inner);
+            border: var(--stroke-width) solid var(--stroke);
+            border-top: none; 
+            border-radius: 0 0 4px 4px;
+        }
+
+        .arm-right {
+            right: -18px; 
+            z-index: 20; 
+            transform: translateY(-50%) rotate(-10deg);
+            cursor: pointer;
+        }
+
+        .arm-right-limb {
+            position: absolute;
+            top: 33px;
+            width: 100%; 
+            height: 75px; 
+            background-color: var(--body-inner);
+            border: var(--stroke-width) solid var(--stroke);
+            border-top: none;
+            border-bottom-left-radius: 2px;
+            border-bottom-right-radius: 40px; 
+        }
+
+        @keyframes lookAround {
+            0%, 10%, 90%, 100% { transform: translate(0, 0); }
+            20%, 35% { transform: translate(-6px, 0); }
+            45%, 55% { transform: translate(0, 0); }
+            65%, 80% { transform: translate(6px, 0); }
+        }
+
+        @keyframes lookStraightAndBig {
+            0% { transform: translate(0, 0) scale(1); }
+            20%, 80% { transform: translate(0, 0) scale(1.3); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { height: 0%; }
+            95% { height: 100%; }
+        }
+        
+        @keyframes tildaSwing {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-3deg); }
+        }
 
         .eye {
             width: 38px;
@@ -137,7 +322,19 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            overflow: hidden;
+            overflow: hidden; 
+        }
+
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background-color: var(--body-inner);
+            z-index: 20;
+            animation: blink 4s infinite;
         }
 
         .pupil {
@@ -148,59 +345,86 @@
             animation: lookAround 8s infinite ease-in-out;
         }
 
-        @keyframes lookAround {
-            0%, 10%, 90%, 100% { transform: translate(0, 0); }
-            20%, 35% { transform: translate(-6px, 0); }
-            45%, 55% { transform: translate(0, 0); }
-            65%, 80% { transform: translate(6px, 0); }
+        .animate-look-hello { animation: lookStraightAndBig 1.5s ease-in-out forwards !important; }
+        .animate-wave-hello { animation: waveHello 1.5s ease-in-out forwards !important; }
+
+        .legs {
+            display: flex;
+            gap: 60px;
+            margin-top: -33px; 
+            z-index: 5;
         }
 
-        /* Руки и ноги */
-        .arm { position: absolute; width: 26px; height: 100px; top: 75%; transition: transform 0.3s ease; }
-        .arm-left { left: -18px; z-index: 11; transform-origin: top center; transform: translateY(-50%) rotate(10deg); }
-        .arm-right { right: -18px; z-index: 11; transform-origin: top center; transform: translateY(-50%) rotate(-10deg); }
-        
-        .arm-sleeve { height: 35px; background-color: var(--body-outer); border: var(--stroke-width) solid var(--stroke); }
-        .arm-right-limb { height: 75px; background-color: var(--body-inner); border: var(--stroke-width) solid var(--stroke); border-top: none; border-radius: 0 0 40px 2px; }
-
-        .legs { display: flex; gap: 60px; margin-top: -33px; z-index: 5; }
-        .leg { width: 22px; height: 75px; background-color: var(--body-inner); border: var(--stroke-width) solid var(--stroke); border-bottom: none; position: relative; }
-        .leg::after { content: ''; position: absolute; bottom: -38px; left: 50%; transform: translateX(-50%); width: 36px; height: 48px; background-color: var(--body-inner); border: var(--stroke-width) solid var(--stroke); border-radius: 50% 50% 50% 50% / 40% 40% 70% 70%; }
-
-        @keyframes legsJump {
-            0% { transform: translateY(0); }
-            15% { transform: translateY(-4px); } 
-            45% { transform: translateY(-55px); } 
-            75% { transform: translateY(0); }
+        .leg {
+            width: 22px;
+            height: 75px;
+            background-color: var(--body-inner); 
+            border: var(--stroke-width) solid var(--stroke);
+            border-bottom: none;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s;
         }
-        .animate-legs-jump { animation: legsJump 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) !important; }
 
+        .leg:active { transform: translateY(2px); }
+
+        .leg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: calc(-1 * var(--stroke-width));
+            width: 22px;
+            height: 35px;
+            background-color: var(--body-outer);
+            border: var(--stroke-width) solid var(--stroke);
+            border-top: none;
+            z-index: 1;
+        }
+
+        .leg::after {
+            content: '';
+            position: absolute;
+            bottom: -38px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 36px;
+            height: 48px;
+            background-color: var(--body-inner);
+            border: var(--stroke-width) solid var(--stroke);
+            border-radius: 50% 50% 50% 50% / 40% 40% 70% 70%;
+            z-index: 2;
+        }
     </style>
 </head>
 <body>
 
     <div class="character-wrapper">
         <div class="tilda-container" id="tildaContainer">
-            <svg viewBox="0 0 120 48" class="w-full h-full">
+            <svg class="tilda-svg" viewBox="0 0 120 48">
                 <path d="M8,20 C20,4 44,8 60,20 C76,32 100,28 112,16 L112,32 C100,44 76,48 60,36 C44,24 20,20 8,32 Z" 
                     fill="var(--body-outer)" stroke="var(--stroke)" stroke-width="2" stroke-linejoin="round"/>
             </svg>
         </div>
 
         <div class="body-main" id="bodyMain">
-            <div class="arm arm-left">
+            <div id="leftArm" class="arm arm-left">
                 <div class="arm-sleeve"></div>
-                <div class="h-10 bg-white border-x-2 border-black"></div>
+                <div class="fork-base"></div>
+                <div class="fork-tines">
+                    <div class="tine"></div>
+                    <div class="tine"></div>
+                    <div class="tine"></div>
+                </div>
             </div>
             
-            <div class="face-area">
+            <div class="face-area" id="faceArea">
                 <div class="eyes-row">
                     <div class="eye"><div class="pupil"></div></div>
                     <div class="eye"><div class="pupil"></div></div>
                 </div>
             </div>
 
-            <div class="arm arm-right">
+            <div id="rightArm" class="arm arm-right">
                 <div class="arm-sleeve"></div>
                 <div class="arm-right-limb"></div>
             </div>
@@ -213,51 +437,104 @@
     </div>
 
     <script>
-        const bodyMain = document.getElementById('bodyMain');
-        const legsContainer = document.getElementById('legsContainer');
-        const tildaContainer = document.getElementById('tildaContainer');
-        const pupils = document.querySelectorAll('.pupil');
-        const legs = document.querySelectorAll('.leg');
-        
-        let isAnimating = false;
-
-        legsContainer.addEventListener('click', (e) => {
-            if (isAnimating) return;
-            isAnimating = true;
-
-            // Запуск анимаций прыжка
-            bodyMain.classList.add('animate-jump');
-            tildaContainer.classList.add('animate-tilda-physics');
-            legs.forEach(l => l.classList.add('animate-legs-jump'));
+        window.onload = function() {
+            const bodyMain = document.getElementById('bodyMain');
+            const legsContainer = document.getElementById('legsContainer');
+            const tildaContainer = document.getElementById('tildaContainer');
+            const leftArm = document.getElementById('leftArm');
+            const rightArm = document.getElementById('rightArm');
+            const pupils = document.querySelectorAll('.pupil');
             
-            // Взгляд вверх начинается почти сразу после отрыва
-            pupils.forEach(p => {
-                p.style.animation = 'none';
-                void p.offsetHeight;
-                p.classList.add('animate-look-up');
-            });
+            let isAnimating = false;
 
-            // Тело приземляется через 0.8с
-            setTimeout(() => {
-                bodyMain.classList.remove('animate-jump');
-                legs.forEach(l => l.classList.remove('animate-legs-jump'));
-                
-                // Переход тильды к плавному финальному спуску
-                tildaContainer.classList.remove('animate-tilda-physics');
-                void tildaContainer.offsetHeight;
-                tildaContainer.classList.add('animate-tilda-return');
-
-                // По завершении всего процесса возвращаем взгляд в норму
+            function triggerBreath() {
+                if (isAnimating) {
+                    scheduleNextBreath();
+                    return;
+                }
+                bodyMain.classList.add('body-breath-active');
                 setTimeout(() => {
-                    tildaContainer.classList.remove('animate-tilda-return');
+                    bodyMain.classList.remove('body-breath-active');
+                    scheduleNextBreath();
+                }, 3000);
+            }
+
+            function scheduleNextBreath() {
+                const delay = Math.random() * 7000 + 5000;
+                setTimeout(triggerBreath, delay);
+            }
+
+            scheduleNextBreath();
+
+            bodyMain.addEventListener('click', (e) => {
+                if (e.target.closest('.arm') || isAnimating) return;
+                
+                isAnimating = true;
+                leftArm.classList.add('animate-wave-hello');
+                pupils.forEach(p => {
+                    p.style.animation = 'none';
+                    void p.offsetHeight;
+                    p.classList.add('animate-look-hello');
+                });
+
+                setTimeout(() => {
+                    leftArm.classList.remove('animate-wave-hello');
                     pupils.forEach(p => {
-                        p.classList.remove('animate-look-up');
+                        p.classList.remove('animate-look-hello');
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
                     });
                     isAnimating = false;
+                }, 1500);
+            });
+
+            rightArm.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                if (isAnimating) return;
+
+                isAnimating = true;
+                rightArm.classList.add('animate-right-arm-grow');
+
+                setTimeout(() => {
+                    rightArm.classList.remove('animate-right-arm-grow');
+                    isAnimating = false;
+                }, 1100); 
+            });
+
+            legsContainer.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                if (isAnimating) return;
+                isAnimating = true;
+
+                bodyMain.classList.add('animate-jump');
+                tildaContainer.classList.add('animate-tilda-jump');
+                legsContainer.classList.add('animate-legs-jump');
+                leftArm.classList.add('animate-left-arm-jump');
+                rightArm.classList.add('animate-right-arm-jump');
+                
+                // Глаза следят за тильдой
+                pupils.forEach(p => {
+                    p.style.animation = 'none';
+                    void p.offsetHeight;
+                    p.classList.add('animate-look-tilda-jump');
+                });
+
+                setTimeout(() => {
+                    bodyMain.classList.remove('animate-jump');
+                    legsContainer.classList.remove('animate-legs-jump');
+                    leftArm.classList.remove('animate-left-arm-jump');
+                    rightArm.classList.remove('animate-right-arm-jump');
                 }, 800);
-            }, 800);
-        });
+
+                setTimeout(() => {
+                    tildaContainer.classList.remove('animate-tilda-jump');
+                    pupils.forEach(p => {
+                        p.classList.remove('animate-look-tilda-jump');
+                        p.style.animation = 'lookAround 8s infinite ease-in-out';
+                    });
+                    isAnimating = false;
+                }, 2400);
+            });
+        };
     </script>
 </body>
 </html>
