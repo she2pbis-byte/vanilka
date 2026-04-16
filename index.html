@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: Высокий прыжок</title>
+    <title>Геометрический персонаж: Таймер ухода</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -34,7 +34,107 @@
             transition: transform 1s linear;
         }
 
-        /* --- Анимация шагов --- */
+        /* --- Выключатель --- */
+        #lightSwitch {
+            position: absolute;
+            right: 40px;
+            top: calc(50% - 80px); 
+            width: 60px;
+            height: 100px;
+            background: #ddd;
+            border: 3px solid #000;
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            cursor: pointer;
+            z-index: 100;
+            user-select: none;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+        }
+
+        .switch-label {
+            font-family: sans-serif;
+            font-weight: bold;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .switch-toggle {
+            width: 30px;
+            height: 40px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .switch-toggle::after {
+            content: '';
+            position: absolute;
+            top: 4px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 10px;
+            background: #000;
+            transition: top 0.1s steps(1);
+        }
+
+        .switch-off .switch-toggle::after {
+            top: auto;
+            bottom: 4px;
+        }
+
+        /* --- Фантомная горизонтальная рука --- */
+        #ghostHand {
+            position: absolute;
+            right: -150px; 
+            top: calc(50% - 40px);
+            width: 100px;
+            height: 26px;
+            z-index: 110;
+            pointer-events: none;
+            display: flex;
+            flex-direction: row-reverse;
+            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .ghost-arm-sleeve {
+            width: 35px;
+            height: 100%;
+            background-color: var(--body-outer);
+            border: var(--stroke-width) solid var(--stroke);
+        }
+
+        .ghost-arm-skin {
+            width: 41px;
+            height: 100%;
+            background: var(--body-inner);
+            border-top: 2px solid black;
+            border-bottom: 2px solid black;
+        }
+
+        .ghost-fingers {
+            width: 26px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .ghost-finger {
+            width: 100%;
+            height: 6px;
+            background: var(--body-inner);
+            border: 2px solid black;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+        }
+
+        /* --- Анимации --- */
         @keyframes walkLegStep {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-15px); }
@@ -45,26 +145,6 @@
         .animate-walk-left-fast { animation: walkLegStep 0.2s infinite ease-in-out; }
         .animate-walk-right-fast { animation: walkLegStep 0.2s infinite ease-in-out; animation-delay: 0.1s; }
 
-        /* --- Тильда --- */
-        .tilda-container {
-            position: absolute;
-            top: -10px;
-            width: 120px;
-            height: 48px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1;
-            transform-origin: center bottom;
-            animation: tildaSwing 6s infinite ease-in-out;
-            pointer-events: none;
-        }
-
-        @keyframes tildaSwing {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-3deg); }
-        }
-
         @keyframes tildaJumpWithWobble {
             0% { transform: translateY(0) rotate(0deg); }
             15% { transform: translateY(-120px) rotate(0deg); } 
@@ -74,11 +154,8 @@
             90% { transform: translateY(-2px) rotate(2deg); }   
             100% { transform: translateY(0) rotate(0deg); }     
         }
-        .animate-tilda-jump {
-            animation: tildaJumpWithWobble 1.8s ease-out forwards !important;
-        }
+        .animate-tilda-jump { animation: tildaJumpWithWobble 1.8s ease-out forwards !important; }
 
-        /* --- Тело --- */
         .body-main {
             position: relative;
             margin-top: 25px; 
@@ -96,9 +173,7 @@
             transition: transform 0.1s ease;
         }
 
-        .body-breath-active {
-            animation: bodyBreathAnimation 3s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
-        }
+        .body-breath-active { animation: bodyBreathAnimation 3s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards; }
 
         @keyframes bodyBreathAnimation {
             0%, 100% { transform: scale(1); }
@@ -112,20 +187,14 @@
         }
         .animate-jump { animation: bodyJump 0.9s ease-out forwards !important; }
 
-        /* --- Лицо и Глаза --- */
         .face-area {
-            width: 154px;
-            height: 154px;
+            width: 154px; height: 154px;
             background-color: var(--body-inner);
             border: var(--stroke-width) solid var(--stroke);
             border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 30px;
-            position: relative;
-            overflow: hidden;
-            z-index: 2;
+            display: flex; flex-direction: column;
+            align-items: center; padding-top: 30px;
+            position: relative; overflow: hidden; z-index: 2;
         }
 
         .eyes-row { display: flex; gap: 18px; margin-bottom: 10px; }
@@ -137,21 +206,11 @@
         }
 
         .eye::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 0%;
-            background-color: var(--body-inner);
-            border-bottom: 2px solid var(--stroke);
-            z-index: 10;
-            transition: height 0.05s ease-in-out;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 0%;
+            background-color: var(--body-inner); border-bottom: 2px solid var(--stroke);
+            z-index: 10; transition: height 0.05s ease-in-out;
         }
-
-        .eye.blink::after {
-            height: 100%;
-        }
+        .eye.blink::after { height: 100%; }
 
         .mouth-svg { width: 56px; height: 20px; overflow: visible; }
         .mouth-path {
@@ -163,12 +222,9 @@
             animation: lookAround 8s infinite ease-in-out;
         }
 
-        /* --- Руки --- */
         .arm {
-            position: absolute;
-            width: 26px; height: 100px; top: 75%;
-            transition: transform 0.3s ease;
-            pointer-events: auto;
+            position: absolute; width: 26px; height: 100px; top: 75%;
+            transition: transform 0.3s ease; pointer-events: auto;
             transform-origin: top center; 
         }
         .arm-sleeve {
@@ -206,13 +262,11 @@
         }
         .animate-right-arm-grow { animation: rightArmGrow 0.9s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; }
 
-        /* --- Ноги --- */
         .legs { display: flex; gap: 60px; margin-top: -33px; z-index: 5; }
         .leg {
             width: 22px; height: 75px; background-color: var(--body-inner); 
             border: var(--stroke-width) solid var(--stroke); border-bottom: none;
-            position: relative; cursor: pointer;
-            transform-origin: top center;
+            position: relative; cursor: pointer; transform-origin: top center;
         }
         .leg::before {
             content: ''; position: absolute; top: 0; left: -2px; width: 22px; height: 35px;
@@ -225,12 +279,16 @@
             border-radius: 50% 50% 40% 40% / 40% 40% 60% 60%;
         }
 
-        @keyframes legJumpCustom {
+        /* --- Взгляд вверх при прыжке --- */
+        @keyframes lookUpJump {
             0% { transform: translateY(0); }
-            25% { transform: translateY(-60px); }
-            55%, 100% { transform: translateY(0); }
+            15% { transform: translateY(-12px); }
+            35% { transform: translateY(-8px); } 
+            55% { transform: translateY(-14px); } 
+            75% { transform: translateY(-10px); } 
+            100% { transform: translateY(0); }
         }
-        .animate-leg-jump { animation: legJumpCustom 0.9s ease-out forwards !important; }
+        .animate-look-jump { animation: lookUpJump 1.8s ease-out forwards !important; }
 
         @keyframes lookAround {
             0%, 100% { transform: translate(0, 0); }
@@ -240,23 +298,28 @@
         .animate-look-hello { animation: lookStraightAndBig 1.5s ease-in-out forwards !important; }
         @keyframes lookStraightAndBig { 0%, 100% { transform: scale(1); } 20%, 80% { transform: scale(1.3); } }
 
-        @keyframes lookAtTildaJump {
-            0% { transform: translateY(0); }
-            15% { transform: translateY(-10px); } 
-            35% { transform: translateY(-6px) translateX(-4px); } 
-            55% { transform: translateY(-4px) translateX(4px); }  
-            75% { transform: translateY(-2px) translateX(-2px); } 
-            90% { transform: translateY(-1px) translateX(1px); } 
-            100% { transform: translateY(0) translateX(0); }
-        }
-        .animate-look-jump { animation: lookAtTildaJump 1.8s ease-out forwards !important; }
-
     </style>
 </head>
 <body>
 
+    <div id="lightSwitch">
+        <span class="switch-label">ВКЛ</span>
+        <div class="switch-toggle"></div>
+        <span class="switch-label">ВЫКЛ</span>
+    </div>
+
+    <div id="ghostHand">
+        <div class="ghost-arm-sleeve"></div>
+        <div class="ghost-arm-skin"></div>
+        <div class="ghost-fingers">
+            <div class="ghost-finger"></div>
+            <div class="ghost-finger"></div>
+            <div class="ghost-finger"></div>
+        </div>
+    </div>
+
     <div class="character-wrapper" id="charWrapper">
-        <div class="tilda-container" id="tildaContainer">
+        <div class="tilda-container" id="tildaContainer" style="animation: tildaSwing 6s infinite ease-in-out;">
             <svg class="tilda-svg" viewBox="0 0 120 48">
                 <path d="M8,20 C20,4 44,8 60,20 C76,32 100,28 112,16 L112,32 C100,44 76,48 60,36 C44,24 20,20 8,32 Z" 
                     fill="var(--body-outer)" stroke="var(--stroke)" stroke-width="2" stroke-linejoin="round"/>
@@ -274,7 +337,7 @@
                 </div>
             </div>
             
-            <div class="face-area" id="faceArea">
+            <div class="face-area">
                 <div class="eyes-row">
                     <div class="eye" id="eyeLeft"><div class="pupil"></div></div>
                     <div class="eye" id="eyeRight"><div class="pupil"></div></div>
@@ -309,60 +372,82 @@
             const rightArm = document.getElementById('rightArm');
             const pupils = document.querySelectorAll('.pupil');
             const eyes = document.querySelectorAll('.eye');
+            const lightSwitch = document.getElementById('lightSwitch');
+            const ghostHand = document.getElementById('ghostHand');
             
             let isAnimating = false;
             let isGone = false; 
-            let idleTimer;
+            let idleTimer = null;
             let animationTimeoutId = null; 
             let currentExitStage = 0; 
             
             const IDLE_TIME = 30000; 
             const MOUTH_NEUTRAL = "M 0,10 L 56,10";
             const MOUTH_SMILE = "M 0,5 Q 28,25 56,5";
-            const MOUTH_SAD = "M 0,15 Q 28,0 56,15"; // Изгиб вниз (грусть)
+            const MOUTH_SAD = "M 0,15 Q 28,0 56,15"; 
 
             function blink() {
-                if (isGone || isAnimating) {
-                    setTimeout(blink, 1000);
-                    return;
-                }
+                if (isGone || isAnimating) { setTimeout(blink, 1000); return; }
                 eyes.forEach(eye => eye.classList.add('blink'));
-                setTimeout(() => {
-                    eyes.forEach(eye => eye.classList.remove('blink'));
-                }, 70); 
-                const nextBlinkInterval = (Math.random() * 8000 + 4000);
-                setTimeout(blink, nextBlinkInterval);
+                setTimeout(() => eyes.forEach(eye => eye.classList.remove('blink')), 70); 
+                setTimeout(blink, Math.random() * 8000 + 4000);
             }
             setTimeout(blink, 2000);
 
-            function bringBackSteps() {
-                if (animationTimeoutId) clearTimeout(animationTimeoutId);
-                isAnimating = true;
-                currentExitStage = 0;
-                isGone = false;
-                legLeft.classList.add('animate-walk-left-fast');
-                legRight.classList.add('animate-walk-right-fast');
-                charWrapper.style.transition = "transform 0.5s linear"; 
-                charWrapper.style.transform = "scale(0.72) translateX(0)";
-                setTimeout(() => finalizeReset(), 500); 
+            // Функция сброса таймера бездействия
+            function resetIdleTimer() {
+                if (idleTimer) clearTimeout(idleTimer);
+                
+                // Если персонаж уже исчез, таймер не запускаем (ждем клика по выключателю)
+                if (isGone) return;
+
+                // Если персонаж начал уход (завис у края), возвращаем его при любой активности
+                if (currentExitStage === 2) {
+                    stopAllTimeouts();
+                    isAnimating = true;
+                    legLeft.classList.add('animate-walk-left-fast');
+                    legRight.classList.add('animate-walk-right-fast');
+                    charWrapper.style.transition = "transform 0.5s linear"; 
+                    charWrapper.style.transform = "scale(0.72) translateX(0)";
+                    setTimeout(() => {
+                        legLeft.classList.remove('animate-walk-left-fast');
+                        legRight.classList.remove('animate-walk-right-fast');
+                        isAnimating = false;
+                        currentExitStage = 0;
+                        resetIdleTimer();
+                    }, 500);
+                    return;
+                }
+                
+                // Запуск таймера на 30 секунд
+                idleTimer = setTimeout(startExitAnimation, IDLE_TIME);
             }
 
-            function finalizeReset() {
+            function stopAllTimeouts() {
+                if (animationTimeoutId) clearTimeout(animationTimeoutId);
+            }
+
+            function resetCharacter() {
+                stopAllTimeouts();
+                isGone = false;
+                isAnimating = false;
+                currentExitStage = 0;
+                
+                lightSwitch.style.display = 'none';
+                lightSwitch.classList.remove('switch-off');
+                ghostHand.style.right = '-150px';
+
+                charWrapper.style.transition = "none";
+                charWrapper.style.transform = "scale(0.72) translateX(0)";
+                
                 legLeft.classList.remove('animate-walk-left-fast', 'animate-walk-left-slow');
                 legRight.classList.remove('animate-walk-right-fast', 'animate-walk-right-slow');
+                
                 pupils.forEach(p => {
                     p.classList.remove('animate-look-hello', 'animate-look-jump');
                     p.style.animation = 'lookAround 8s infinite ease-in-out';
                 });
-                isAnimating = false;
                 resetIdleTimer();
-            }
-
-            function resetIdleTimer() {
-                if (isGone) return;
-                if (currentExitStage === 2) bringBackSteps();
-                clearTimeout(idleTimer);
-                if (!isAnimating) idleTimer = setTimeout(startExitAnimation, IDLE_TIME);
             }
 
             function startExitAnimation() {
@@ -370,10 +455,12 @@
                 isAnimating = true;
                 interruptBreath();
                 currentExitStage = 1;
+                
                 legLeft.classList.add('animate-walk-left-slow');
                 legRight.classList.add('animate-walk-right-slow');
                 charWrapper.style.transition = "transform 0.5s linear"; 
                 charWrapper.style.transform = "scale(0.72) translateX(80px)";
+                
                 animationTimeoutId = setTimeout(() => {
                     currentExitStage = 2;
                     legLeft.classList.remove('animate-walk-left-slow');
@@ -382,27 +469,42 @@
                         p.style.animation = 'none';
                         p.classList.add('animate-look-hello');
                     });
+                    
                     animationTimeoutId = setTimeout(() => {
                         currentExitStage = 3;
                         legLeft.classList.add('animate-walk-left-slow');
                         legRight.classList.add('animate-walk-right-slow');
                         charWrapper.style.transition = "transform 0.33s linear"; 
                         charWrapper.style.transform = "scale(0.72) translateX(150vw)";
+                        
                         animationTimeoutId = setTimeout(() => {
                             isGone = true; 
                             isAnimating = false;
-                            currentExitStage = 0;
+                            currentExitStage = 4;
                             legLeft.classList.remove('animate-walk-left-slow');
                             legRight.classList.remove('animate-walk-right-slow');
+                            
+                            lightSwitch.style.display = 'flex';
+
+                            setTimeout(() => {
+                                ghostHand.style.right = '40px'; 
+                                setTimeout(() => {
+                                    lightSwitch.classList.add('switch-off'); 
+                                    setTimeout(() => ghostHand.style.right = '-150px', 400);
+                                }, 400);
+                            }, 500);
                         }, 333);
                     }, 2000);
                 }, 500);
             }
 
+            // Слушатели активности для сброса таймера
             window.addEventListener('mousedown', resetIdleTimer);
             window.addEventListener('touchstart', resetIdleTimer);
             window.addEventListener('keydown', resetIdleTimer);
-            resetIdleTimer();
+            window.addEventListener('mousemove', resetIdleTimer);
+
+            lightSwitch.addEventListener('click', resetCharacter);
 
             function triggerBreath() {
                 if (isAnimating || isGone) { scheduleNextBreath(); return; }
@@ -416,11 +518,11 @@
             scheduleNextBreath();
             function interruptBreath() { bodyMain.classList.remove('body-breath-active'); }
 
-            // ОБРАБОТЧИК: Приветствие
             bodyMain.addEventListener('click', (e) => {
                 if (e.target.closest('.arm') || isAnimating || isGone) return;
                 isAnimating = true;
                 interruptBreath();
+                resetIdleTimer();
                 leftArm.classList.add('animate-wave-hello');
                 mouthPath.setAttribute('d', MOUTH_SMILE);
                 pupils.forEach(p => {
@@ -437,16 +539,15 @@
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
                     });
                     isAnimating = false;
-                    resetIdleTimer();
                 }, 1500);
             });
 
-            // ОБРАБОТЧИК: Правая рука
             rightArm.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating || isGone) return;
                 isAnimating = true;
                 interruptBreath();
+                resetIdleTimer();
                 
                 rightArm.classList.add('animate-right-arm-grow');
                 pupils.forEach(p => {
@@ -462,16 +563,15 @@
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
                     });
                     isAnimating = false;
-                    resetIdleTimer();
                 }, 900);
             });
 
-            // ОБРАБОТЧИК: Прыжок
             legsContainer.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating || isGone) return;
                 isAnimating = true;
                 interruptBreath();
+                resetIdleTimer();
 
                 bodyMain.classList.add('animate-jump');
                 legLeft.classList.add('animate-leg-jump');
@@ -480,7 +580,6 @@
                 leftArm.classList.add('animate-jump-arms');
                 rightArm.classList.add('animate-jump-arms');
                 
-                // Рот становится грустным во время прыжка
                 mouthPath.setAttribute('d', MOUTH_SAD);
 
                 pupils.forEach(p => {
@@ -499,16 +598,17 @@
 
                 setTimeout(() => {
                     tildaContainer.classList.remove('animate-tilda-jump');
-                    // Возвращаем нейтральный рот
                     mouthPath.setAttribute('d', MOUTH_NEUTRAL);
                     pupils.forEach(p => {
                         p.classList.remove('animate-look-jump');
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
                     });
                     isAnimating = false;
-                    resetIdleTimer();
                 }, 1800); 
             });
+
+            // Инициализация первого таймера
+            resetIdleTimer();
         };
     </script>
 </body>
