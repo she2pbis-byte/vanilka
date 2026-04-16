@@ -1,0 +1,263 @@
+<html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Геометрический персонаж: прыжок с взглядом вверх</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --body-outer: #C7886B;
+            --body-inner: #FFECD2;
+            --stroke: #000000;
+            --stroke-width: 2px;
+        }
+
+        body {
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .character-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: scale(0.72); 
+            transform-origin: center;
+        }
+
+        /* Контейнер тильды (волосы) */
+        .tilda-container {
+            position: absolute;
+            top: -10px;
+            width: 120px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 15;
+            transform-origin: center center;
+            animation: tildaSwingCustom 6s infinite ease-in-out;
+        }
+
+        @keyframes tildaSwingCustom {
+            0%, 100% { transform: rotate(0deg) translateY(0); }
+            15% { transform: rotate(-9deg) translateY(-5px); }
+            16.6% { transform: rotate(-9deg) translateY(-5px); } 
+            50% { transform: rotate(0deg) translateY(0); }
+            65% { transform: rotate(9deg) translateY(-5px); }
+            66.6% { transform: rotate(9deg) translateY(-5px); }
+        }
+
+        /* Физика прыжка тильды: подъем синхронен, спуск в 3 раза медленнее */
+        @keyframes tildaJumpPhysics {
+            0% { transform: translateY(0); }
+            18.75% { transform: translateY(8px); } /* Приседание синхронно с телом */
+            56.25% { transform: translateY(-110px); } /* Пик прыжка синхронно с телом */
+            100% { transform: translateY(-73px); } /* Медленный спуск (1/3 пути за время падения тела) */
+        }
+
+        /* Возврат тильды после приземления тела */
+        @keyframes tildaReturn {
+            0% { transform: translateY(-73px); }
+            100% { transform: translateY(0); }
+        }
+
+        .animate-tilda-physics { animation: tildaJumpPhysics 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards !important; }
+        .animate-tilda-return { animation: tildaReturn 0.8s ease-out forwards !important; }
+
+        /* Тело */
+        .body-main {
+            position: relative;
+            margin-top: 25px; 
+            width: 210px;
+            height: 210px;
+            background-color: var(--body-outer);
+            border: var(--stroke-width) solid var(--stroke);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+
+        @keyframes jump {
+            0% { transform: translateY(0) scale(1, 1); }
+            15% { transform: translateY(8px) scale(1.15, 0.85); } 
+            45% { transform: translateY(-110px) scale(0.9, 1.1); } 
+            75% { transform: translateY(0) scale(1.1, 0.9); } 
+            100% { transform: translateY(0) scale(1, 1); }
+        }
+
+        .animate-jump { animation: jump 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) !important; }
+
+        /* Взгляд вверх на тильду во время её падения */
+        @keyframes lookUpAtTilda {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(0, -8px); } /* Глаза следят за улетающей тильдой */
+            50% { transform: translate(0, -12px); } /* Максимально вверх, когда тело упало, а тильда еще нет */
+            100% { transform: translate(0, 0); }
+        }
+
+        .animate-look-up { animation: lookUpAtTilda 1.6s ease-out forwards !important; }
+
+        /* Лицо */
+        .face-area {
+            width: 154px;
+            height: 154px;
+            background-color: var(--body-inner);
+            border: var(--stroke-width) solid var(--stroke);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .eyes-row { display: flex; gap: 18px; margin-bottom: 8px; }
+
+        .eye {
+            width: 38px;
+            height: 38px;
+            background-color: #ffffff;
+            border: var(--stroke-width) solid var(--stroke);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pupil {
+            width: 16px;
+            height: 16px;
+            background-color: var(--stroke);
+            border-radius: 50%;
+            animation: lookAround 8s infinite ease-in-out;
+        }
+
+        @keyframes lookAround {
+            0%, 10%, 90%, 100% { transform: translate(0, 0); }
+            20%, 35% { transform: translate(-6px, 0); }
+            45%, 55% { transform: translate(0, 0); }
+            65%, 80% { transform: translate(6px, 0); }
+        }
+
+        /* Руки и ноги */
+        .arm { position: absolute; width: 26px; height: 100px; top: 75%; transition: transform 0.3s ease; }
+        .arm-left { left: -18px; z-index: 11; transform-origin: top center; transform: translateY(-50%) rotate(10deg); }
+        .arm-right { right: -18px; z-index: 11; transform-origin: top center; transform: translateY(-50%) rotate(-10deg); }
+        
+        .arm-sleeve { height: 35px; background-color: var(--body-outer); border: var(--stroke-width) solid var(--stroke); }
+        .arm-right-limb { height: 75px; background-color: var(--body-inner); border: var(--stroke-width) solid var(--stroke); border-top: none; border-radius: 0 0 40px 2px; }
+
+        .legs { display: flex; gap: 60px; margin-top: -33px; z-index: 5; }
+        .leg { width: 22px; height: 75px; background-color: var(--body-inner); border: var(--stroke-width) solid var(--stroke); border-bottom: none; position: relative; }
+        .leg::after { content: ''; position: absolute; bottom: -38px; left: 50%; transform: translateX(-50%); width: 36px; height: 48px; background-color: var(--body-inner); border: var(--stroke-width) solid var(--stroke); border-radius: 50% 50% 50% 50% / 40% 40% 70% 70%; }
+
+        @keyframes legsJump {
+            0% { transform: translateY(0); }
+            15% { transform: translateY(-4px); } 
+            45% { transform: translateY(-55px); } 
+            75% { transform: translateY(0); }
+        }
+        .animate-legs-jump { animation: legsJump 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) !important; }
+
+    </style>
+</head>
+<body>
+
+    <div class="character-wrapper">
+        <div class="tilda-container" id="tildaContainer">
+            <svg viewBox="0 0 120 48" class="w-full h-full">
+                <path d="M8,20 C20,4 44,8 60,20 C76,32 100,28 112,16 L112,32 C100,44 76,48 60,36 C44,24 20,20 8,32 Z" 
+                    fill="var(--body-outer)" stroke="var(--stroke)" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+        </div>
+
+        <div class="body-main" id="bodyMain">
+            <div class="arm arm-left">
+                <div class="arm-sleeve"></div>
+                <div class="h-10 bg-white border-x-2 border-black"></div>
+            </div>
+            
+            <div class="face-area">
+                <div class="eyes-row">
+                    <div class="eye"><div class="pupil"></div></div>
+                    <div class="eye"><div class="pupil"></div></div>
+                </div>
+            </div>
+
+            <div class="arm arm-right">
+                <div class="arm-sleeve"></div>
+                <div class="arm-right-limb"></div>
+            </div>
+        </div>
+
+        <div class="legs" id="legsContainer">
+            <div class="leg"></div>
+            <div class="leg"></div>
+        </div>
+    </div>
+
+    <script>
+        const bodyMain = document.getElementById('bodyMain');
+        const legsContainer = document.getElementById('legsContainer');
+        const tildaContainer = document.getElementById('tildaContainer');
+        const pupils = document.querySelectorAll('.pupil');
+        const legs = document.querySelectorAll('.leg');
+        
+        let isAnimating = false;
+
+        legsContainer.addEventListener('click', (e) => {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            // Запуск анимаций прыжка
+            bodyMain.classList.add('animate-jump');
+            tildaContainer.classList.add('animate-tilda-physics');
+            legs.forEach(l => l.classList.add('animate-legs-jump'));
+            
+            // Взгляд вверх начинается почти сразу после отрыва
+            pupils.forEach(p => {
+                p.style.animation = 'none';
+                void p.offsetHeight;
+                p.classList.add('animate-look-up');
+            });
+
+            // Тело приземляется через 0.8с
+            setTimeout(() => {
+                bodyMain.classList.remove('animate-jump');
+                legs.forEach(l => l.classList.remove('animate-legs-jump'));
+                
+                // Переход тильды к плавному финальному спуску
+                tildaContainer.classList.remove('animate-tilda-physics');
+                void tildaContainer.offsetHeight;
+                tildaContainer.classList.add('animate-tilda-return');
+
+                // По завершении всего процесса возвращаем взгляд в норму
+                setTimeout(() => {
+                    tildaContainer.classList.remove('animate-tilda-return');
+                    pupils.forEach(p => {
+                        p.classList.remove('animate-look-up');
+                        p.style.animation = 'lookAround 8s infinite ease-in-out';
+                    });
+                    isAnimating = false;
+                }, 800);
+            }, 800);
+        });
+    </script>
+</body>
+</html>
