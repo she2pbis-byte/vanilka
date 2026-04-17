@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: плавное падение</title>
+    <title>Геометрический персонаж: приоритет анимаций</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -47,18 +47,12 @@
             pointer-events: none;
         }
 
-        /* Обновленная анимация: последние движения объединены в одно плавное */
         @keyframes tildaLeafJump {
             0% { transform: translateY(0) translateX(0) rotate(0deg); }
-            /* Фаза взлета: жесткая привязка */
             10% { transform: translateY(15px) translateX(0) rotate(0deg); } 
             25% { transform: translateY(-130px) translateX(0) rotate(0deg); } 
-            
-            /* Фаза падения: плавное планирование */
             35% { transform: translateY(-110px) translateX(25px) rotate(-12deg); }
             55% { transform: translateY(-80px) translateX(-35px) rotate(18deg); }
-            
-            /* Объединенный финальный этап: плавный возврат в центр */
             85% { transform: translateY(-20px) translateX(10px) rotate(-5deg); }
             100% { transform: translateY(0) translateX(0) rotate(0deg); }
         }
@@ -151,6 +145,23 @@
             overflow: hidden; 
         }
 
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--body-inner);
+            border-bottom: var(--stroke-width) solid var(--stroke);
+            transition: top 0.1s ease-in-out;
+            z-index: 10;
+        }
+
+        .eye.blinking::after {
+            top: 0;
+        }
+
         .mouth-svg {
             width: 60px;
             height: 25px;
@@ -182,7 +193,8 @@
             height: 16px;
             background-color: var(--stroke);
             border-radius: 50%;
-            animation: lookAround 8s infinite ease-in-out;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
         }
 
         .arm {
@@ -241,19 +253,10 @@
             border: var(--stroke-width) solid var(--stroke); border-radius: 50%;
         }
 
-        @keyframes lookAround {
-            0%, 10%, 90%, 100% { transform: translate(0, 0); }
-            20%, 35% { transform: translate(-6px, 0); }
-            65%, 80% { transform: translate(6px, 0); }
-        }
-
         @keyframes tildaSwing {
             0%, 100% { transform: rotate(0deg); }
             50% { transform: rotate(-3deg); }
         }
-
-        @keyframes lookStraightAndBig { 0%, 100% { transform: scale(1); } 20%, 80% { transform: scale(1.3); } }
-        .animate-look-hello { animation: lookStraightAndBig 1.5s ease-in-out forwards; }
 
     </style>
 </head>
@@ -308,18 +311,80 @@
             const mouthPath = document.getElementById('mouthPath');
             const leftArm = document.getElementById('leftArm');
             const rightArm = document.getElementById('rightArm');
+            const eyes = document.querySelectorAll('.eye');
             const pupils = document.querySelectorAll('.pupil');
             
-            let isAnimating = false; 
+            let isAnimating = false;
+            let moveEyesTimeout = null;
+            let blinkTimeout = null;
+            let breathTimeout = null;
 
             const STRAIGHT_PATH = "M 5,10 C 20,10 40,10 55,10";
             const SMILE_PATH = "M 5,10 C 15,18 45,18 55,10";
 
+            // Функция остановки всех фоновых анимаций
+            function stopIdleAnimations() {
+                isAnimating = true;
+                
+                // Останавливаем таймеры
+                clearTimeout(moveEyesTimeout);
+                clearTimeout(blinkTimeout);
+                clearTimeout(breathTimeout);
+                
+                // Сбрасываем текущие визуальные состояния idle
+                bodyMain.classList.remove('body-breath-active');
+                eyes.forEach(e => e.classList.remove('blinking'));
+                
+                // Возвращаем зрачки в центр (необязательно, но для чистоты анимации лучше сделать)
+                pupils.forEach(p => {
+                    p.style.transform = 'translate(0, 0)';
+                });
+            }
+
+            // Функция возобновления всех фоновых анимаций
+            function resumeIdleAnimations() {
+                isAnimating = false;
+                scheduleNextBreath();
+                moveEyesRandomly();
+                blinkRandomly();
+            }
+
+            // Рандомная анимация зрачков
+            function moveEyesRandomly() {
+                if (isAnimating) return;
+                
+                const x = (Math.random() - 0.5) * 12;
+                const y = (Math.random() - 0.5) * 8;
+                
+                pupils.forEach(p => {
+                    p.style.transform = `translate(${x}px, ${y}px)`;
+                });
+
+                moveEyesTimeout = setTimeout(moveEyesRandomly, Math.random() * 3000 + 2000);
+            }
+
+            // Рандомное мигание
+            function blinkRandomly() {
+                if (isAnimating) return;
+                
+                const blinkDuration = 150;
+                eyes.forEach(e => e.classList.add('blinking'));
+                
+                setTimeout(() => {
+                    eyes.forEach(e => e.classList.remove('blinking'));
+                    
+                    if (isAnimating) return;
+
+                    const doubleBlink = Math.random() < 0.2;
+                    const nextInterval = doubleBlink ? 200 : (Math.random() * 4000 + 3000);
+                    blinkTimeout = setTimeout(blinkRandomly, nextInterval);
+                }, blinkDuration);
+            }
+
+            // Дыхание
             function triggerBreath() {
-                if (isAnimating) { 
-                    scheduleNextBreath(); 
-                    return; 
-                }
+                if (isAnimating) return;
+                
                 bodyMain.classList.add('body-breath-active');
                 setTimeout(() => {
                     bodyMain.classList.remove('body-breath-active');
@@ -328,42 +393,35 @@
             }
 
             function scheduleNextBreath() { 
-                setTimeout(triggerBreath, Math.random() * 5000 + 3000); 
+                if (isAnimating) return;
+                breathTimeout = setTimeout(triggerBreath, Math.random() * 5000 + 3000); 
             }
-            
+
+            // Запуск фоновых процессов
+            moveEyesRandomly();
+            blinkRandomly();
             scheduleNextBreath();
 
-            function interruptBreath() {
-                bodyMain.classList.remove('body-breath-active');
-            }
+            // ОБРАБОТЧИКИ КЛИКОВ
 
             // ПРИВЕТСТВИЕ
             bodyMain.addEventListener('click', (e) => {
-                if (e.target.closest('.arm') || isAnimating) return;
-                isAnimating = true;
-                interruptBreath();
+                if (e.target.closest('.arm') || e.target.closest('.legs') || isAnimating) return;
                 
+                stopIdleAnimations();
                 leftArm.classList.add('animate-wave-hello');
                 
-                setTimeout(() => {
-                    mouthPath.setAttribute('d', SMILE_PATH);
-                }, 100);
+                setTimeout(() => { mouthPath.setAttribute('d', SMILE_PATH); }, 100);
                 
-                pupils.forEach(p => {
-                    p.style.animation = 'none';
-                    void p.offsetHeight;
-                    p.classList.add('animate-look-hello');
-                });
+                // Взгляд прямо во время приветствия
+                pupils.forEach(p => { p.style.transform = 'translate(0, 0) scale(1.3)'; });
 
                 setTimeout(() => {
                     leftArm.classList.remove('animate-wave-hello');
                     mouthPath.setAttribute('d', STRAIGHT_PATH);
+                    pupils.forEach(p => { p.style.transform = 'translate(0, 0) scale(1)'; });
                     
-                    pupils.forEach(p => {
-                        p.classList.remove('animate-look-hello');
-                        p.style.animation = 'lookAround 8s infinite ease-in-out';
-                    });
-                    isAnimating = false;
+                    resumeIdleAnimations();
                 }, 1500);
             });
 
@@ -371,12 +429,13 @@
             rightArm.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating) return;
-                isAnimating = true;
-                interruptBreath();
+                
+                stopIdleAnimations();
                 rightArm.classList.add('animate-right-arm-grow');
+                
                 setTimeout(() => {
                     rightArm.classList.remove('animate-right-arm-grow');
-                    isAnimating = false;
+                    resumeIdleAnimations();
                 }, 800); 
             });
 
@@ -384,20 +443,24 @@
             legsContainer.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 if (isAnimating) return;
-                isAnimating = true;
-                interruptBreath();
+                
+                stopIdleAnimations();
 
                 bodyMain.classList.add('animate-jump-sharp');
                 legsContainer.classList.add('animate-leg-jump-sharp');
                 tildaContainer.classList.add('animate-tilda-leaf');
                 mouthPath.closest('.mouth-svg').classList.add('animate-mouth-jump-sharp');
                 
+                // Фикс взгляда при прыжке (вверх)
+                pupils.forEach(p => { p.style.transform = 'translate(0, -5px)'; });
+
                 setTimeout(() => {
                     bodyMain.classList.remove('animate-jump-sharp');
                     legsContainer.classList.remove('animate-leg-jump-sharp');
                     tildaContainer.classList.remove('animate-tilda-leaf');
                     mouthPath.closest('.mouth-svg').classList.remove('animate-mouth-jump-sharp');
-                    isAnimating = false;
+                    
+                    resumeIdleAnimations();
                 }, 3000);
             });
         };
