@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: тильда-планирование</title>
+    <title>Геометрический персонаж: плавное падение</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -47,27 +47,49 @@
             pointer-events: none;
         }
 
-        /* Анимация тильды при прыжке с эффектом планирования */
+        /* Улучшенная анимация тильды: убраны рывки при падении */
         @keyframes tildaLeafJump {
-            0% { transform: translateY(0) rotate(0deg); }
-            /* Этап 1: Подъем вместе с телом */
-            15% { transform: translateY(5px) rotate(0deg); }
-            35% { transform: translateY(-110px) rotate(0deg); } 
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            /* Фаза взлета: жесткая привязка */
+            10% { transform: translateY(15px) translateX(0) rotate(0deg); } 
+            25% { transform: translateY(-130px) translateX(0) rotate(0deg); } 
             
-            /* Этап 2: Падение как лист (амплитуда 40px с наклоном краев) */
-            /* В крайне правом положении (translateX 40px) правый край выше (rotate -15deg) */
-            45% { transform: translateY(-100px) translateX(40px) rotate(-15deg); }
-            /* В крайне левом положении (translateX -40px) левый край выше (rotate 15deg) */
-            55% { transform: translateY(-80px) translateX(-40px) rotate(15deg); }
-            65% { transform: translateY(-60px) translateX(40px) rotate(-15deg); }
-            75% { transform: translateY(-40px) translateX(-40px) rotate(15deg); }
-            85% { transform: translateY(-20px) translateX(30px) rotate(-10deg); }
-            95% { transform: translateY(-5px) translateX(-15px) rotate(5deg); }
+            /* Фаза падения: сглаженные переходы без резких остановок */
+            35% { transform: translateY(-110px) translateX(20px) rotate(-10deg); }
+            50% { transform: translateY(-85px) translateX(-30px) rotate(15deg); }
+            65% { transform: translateY(-60px) translateX(25px) rotate(-12deg); }
+            80% { transform: translateY(-35px) translateX(-15px) rotate(8deg); }
+            92% { transform: translateY(-10px) translateX(0) rotate(0deg); }
             100% { transform: translateY(0) translateX(0) rotate(0deg); }
         }
 
         .animate-tilda-leaf {
-            animation: tildaLeafJump 2.4s cubic-bezier(0.215, 0.61, 0.355, 1) forwards !important;
+            animation: tildaLeafJump 3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        }
+
+        @keyframes sharpJump {
+            0% { transform: translateY(0) scale(1, 1); }
+            10% { transform: translateY(15px) scale(1.066, 0.933); }
+            25% { transform: translateY(-130px) scale(0.95, 1.066); }
+            45% { transform: translateY(0) scale(1.033, 0.966); }
+            55% { transform: translateY(0) scale(1, 1); }
+            100% { transform: translateY(0) scale(1, 1); }
+        }
+
+        @keyframes sharpLegJump {
+            0% { transform: translateY(0); }
+            10% { transform: translateY(5px); }
+            25% { transform: translateY(-70px); }
+            45% { transform: translateY(0); }
+            100% { transform: translateY(0); }
+        }
+
+        .animate-jump-sharp {
+            animation: sharpJump 3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+        }
+
+        .animate-leg-jump-sharp {
+            animation: sharpLegJump 3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
         }
 
         .body-main {
@@ -94,30 +116,6 @@
         @keyframes bodyBreathAnimation {
             0%, 100% { transform: scale(1); }
             40% { transform: scale(1.06); } 
-        }
-
-        @keyframes jump {
-            0% { transform: translateY(0) scale(1, 1); }
-            15% { transform: translateY(5px) scale(1.1, 0.9); }
-            45% { transform: translateY(-110px) scale(0.9, 1.1); }
-            75% { transform: translateY(0) scale(1.05, 0.95); }
-            100% { transform: translateY(0) scale(1, 1); }
-        }
-
-        @keyframes legJump {
-            0% { transform: translateY(0); }
-            15% { transform: translateY(2px); }
-            45% { transform: translateY(-55px); }
-            75% { transform: translateY(0); }
-            100% { transform: translateY(0); }
-        }
-
-        .animate-jump {
-            animation: jump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
-        }
-
-        .animate-leg-jump {
-            animation: legJump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
         }
 
         .face-area {
@@ -167,13 +165,16 @@
             transition: d 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        @keyframes mouthStretch {
-            0%, 100% { transform: scaleX(1); }
-            45% { transform: scaleX(1.15); }
+        @keyframes mouthStretchSharp {
+            0% { transform: scaleX(1); }
+            10% { transform: scaleX(1.1); }
+            25% { transform: scaleX(0.9); }
+            45% { transform: scaleX(1.05); }
+            60% { transform: scaleX(1); }
         }
 
-        .animate-mouth-jump {
-            animation: mouthStretch 0.8s ease-in-out;
+        .animate-mouth-jump-sharp {
+            animation: mouthStretchSharp 3s ease-out;
         }
 
         .pupil {
@@ -386,21 +387,18 @@
                 isAnimating = true;
                 interruptBreath();
 
-                bodyMain.classList.add('animate-jump');
-                legsContainer.classList.add('animate-leg-jump');
+                bodyMain.classList.add('animate-jump-sharp');
+                legsContainer.classList.add('animate-leg-jump-sharp');
                 tildaContainer.classList.add('animate-tilda-leaf');
-                mouthPath.closest('.mouth-svg').classList.add('animate-mouth-jump');
+                mouthPath.closest('.mouth-svg').classList.add('animate-mouth-jump-sharp');
                 
                 setTimeout(() => {
-                    bodyMain.classList.remove('animate-jump');
-                }, 800);
-
-                setTimeout(() => {
-                    legsContainer.classList.remove('animate-leg-jump');
+                    bodyMain.classList.remove('animate-jump-sharp');
+                    legsContainer.classList.remove('animate-leg-jump-sharp');
                     tildaContainer.classList.remove('animate-tilda-leaf');
-                    mouthPath.closest('.mouth-svg').classList.remove('animate-mouth-jump');
+                    mouthPath.closest('.mouth-svg').classList.remove('animate-mouth-jump-sharp');
                     isAnimating = false;
-                }, 2400);
+                }, 3000);
             });
         };
     </script>
