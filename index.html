@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: анимация убегания и возврата</title>
+    <title>Геометрический персонаж: Возврат справа</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -31,21 +31,27 @@
             align-items: center;
             transform: scale(0.72) translateX(0); 
             transform-origin: center;
-            /* Плавный переход для возвращения */
-            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Плавный переход для возвращения (2 секунды) */
+            transition: transform 2s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        /* Анимация убегания */
+        /* Анимация убегания вправо */
         @keyframes runAway {
             0% { transform: scale(0.72) translateX(0); }
-            16.6% { transform: scale(0.72) translateX(70px); } /* 0.5с */
-            83.3% { transform: scale(0.72) translateX(70px); } /* +2с пауза */
-            100% { transform: scale(0.72) translateX(150vw); } /* +0.5с рывок */
+            15% { transform: scale(0.72) translateX(70px); } 
+            80% { transform: scale(0.72) translateX(70px); } 
+            100% { transform: scale(0.72) translateX(150vw); } 
         }
 
         .animate-run-away {
             animation: runAway 3s forwards ease-in-out;
-            transition: none !important; /* Отключаем transition во время ключевых кадров */
+            transition: none !important; 
+        }
+
+        /* Состояние за кадром справа (подготовка к возврату) */
+        .off-screen-right {
+            transition: none !important;
+            transform: scale(0.72) translateX(150vw) !important;
         }
 
         .tilda-container {
@@ -63,10 +69,10 @@
         }
 
         @keyframes tildaLeafJump {
-            0% { transform: translateY(0) translateX(0) rotate(0deg); }
-            10% { transform: translateY(15px) translateX(0) rotate(0deg); } 
-            25% { transform: translateY(-130px) translateX(0) rotate(0deg); } 
-            100% { transform: translateY(0) translateX(0) rotate(0deg); }
+            0% { transform: translateY(0) rotate(0deg); }
+            10% { transform: translateY(15px) rotate(0deg); } 
+            25% { transform: translateY(-130px) rotate(0deg); } 
+            100% { transform: translateY(0) rotate(0deg); }
         }
 
         .animate-tilda-leaf {
@@ -302,62 +308,66 @@
             let blinkTimeout = null;
             let breathTimeout = null;
             let idleTimeout = null;
+            let isAway = false; 
 
             const STRAIGHT_PATH = "M 5,10 C 20,10 40,10 55,10";
             const SMILE_PATH = "M 5,10 C 15,18 45,18 55,10";
-            const SAD_PATH = "M 5,14 C 15,8 45,8 55,14"; // Уголки опущены
+            const SAD_PATH = "M 5,14 C 15,8 45,8 55,14";
 
-            // Сброс таймера убегания при любом взаимодействии
             function resetIdleTimer() {
-                if (wrapper.classList.contains('animate-run-away')) {
-                    returnBack(); // Если убегает, возвращаем
+                if (isAway) {
+                    returnBack(); 
+                    return;
                 }
-                
                 clearTimeout(idleTimeout);
-                idleTimeout = setTimeout(startRunningAway, 30000); 
+                idleTimeout = setTimeout(startRunningAway, 15000); 
             }
 
-            // Функция плавного возвращения
             function returnBack() {
+                if (!isAway) return;
+                isAway = false;
+
+                // 1. Убираем анимацию убегания и гарантируем, что персонаж зафиксирован за правым краем
                 wrapper.classList.remove('animate-run-away');
-                // Визуальный эффект грусти при возвращении
-                mouthPath.setAttribute('d', SAD_PATH);
+                wrapper.classList.add('off-screen-right');
                 
-                // Возвращаем масштаб и позицию через transition
-                wrapper.style.transform = 'scale(0.72) translateX(0)';
-                
-                setTimeout(() => {
-                    mouthPath.setAttribute('d', STRAIGHT_PATH);
-                    resumeIdleAnimations();
-                }, 1000);
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        // 2. Убираем класс фиксации и запускаем переход к центру
+                        wrapper.classList.remove('off-screen-right');
+                        wrapper.style.transform = 'scale(0.72) translateX(0)';
+                        
+                        // Меняем рот на грустный во время возвращения
+                        mouthPath.setAttribute('d', SAD_PATH);
+                        
+                        // Смотрит влево (в сторону движения)
+                        pupils.forEach(p => { p.style.transform = 'translateX(-8px)'; });
+
+                        // Через 2 секунды возвращаем обычное состояние
+                        setTimeout(() => {
+                            mouthPath.setAttribute('d', STRAIGHT_PATH);
+                            resumeIdleAnimations();
+                        }, 2000);
+                    });
+                });
             }
 
-            // Функция убегания
             function startRunningAway() {
-                if (isAnimating) return;
+                if (isAnimating || isAway) return;
                 
                 stopIdleAnimations();
                 isAnimating = true;
                 
-                // Сбрасываем инлайновые стили трансформации перед запуском анимации
                 wrapper.style.transform = ''; 
                 wrapper.classList.add('animate-run-away');
                 
-                // 1 этап: Смотрит в сторону (0.5с)
+                // Смотрит вправо перед рывком
                 pupils.forEach(p => { p.style.transform = 'translateX(8px)'; });
 
-                // 2 этап: Задержка (через 0.5с после старта)
                 setTimeout(() => {
-                    // Смотрит вперед с увеличенными зрачками
-                    pupils.forEach(p => { 
-                        p.style.transform = 'translate(0, 0) scale(1.6)'; 
-                    });
-                }, 500);
-
-                // 3 этап: Быстрый уход (финализируется самой анимацией через 2.5с)
-                setTimeout(() => {
-                    // Тут можно добавить дополнительные эффекты перед рывком
-                }, 2500);
+                    isAway = true;
+                    isAnimating = false;
+                }, 3000);
             }
 
             function stopIdleAnimations() {
@@ -367,9 +377,6 @@
                 clearTimeout(breathTimeout);
                 bodyMain.classList.remove('body-breath-active');
                 eyes.forEach(e => e.classList.remove('blinking'));
-                pupils.forEach(p => {
-                    p.style.transform = 'translate(0, 0) scale(1)';
-                });
             }
 
             function resumeIdleAnimations() {
@@ -377,12 +384,11 @@
                 scheduleNextBreath();
                 moveEyesRandomly();
                 blinkRandomly();
-                // Не вызываем resetIdleTimer рекурсивно здесь, чтобы не плодить циклы,
-                // он сработает от общего слушателя событий.
+                resetIdleTimer();
             }
 
             function moveEyesRandomly() {
-                if (isAnimating) return;
+                if (isAnimating || isAway) return;
                 const x = (Math.random() - 0.5) * 12;
                 const y = (Math.random() - 0.5) * 8;
                 pupils.forEach(p => {
@@ -392,17 +398,17 @@
             }
 
             function blinkRandomly() {
-                if (isAnimating) return;
+                if (isAnimating || isAway) return;
                 eyes.forEach(e => e.classList.add('blinking'));
                 setTimeout(() => {
                     eyes.forEach(e => e.classList.remove('blinking'));
-                    if (isAnimating) return;
+                    if (isAnimating || isAway) return;
                     blinkTimeout = setTimeout(blinkRandomly, Math.random() * 4000 + 3000);
                 }, 150);
             }
 
             function triggerBreath() {
-                if (isAnimating) return;
+                if (isAnimating || isAway) return;
                 bodyMain.classList.add('body-breath-active');
                 setTimeout(() => {
                     bodyMain.classList.remove('body-breath-active');
@@ -411,27 +417,17 @@
             }
 
             function scheduleNextBreath() { 
-                if (isAnimating) return;
+                if (isAnimating || isAway) return;
                 breathTimeout = setTimeout(triggerBreath, Math.random() * 5000 + 3000); 
             }
 
-            // Глобальный слушатель для сброса и возврата
-            document.addEventListener('mousedown', (e) => {
-                resetIdleTimer();
-            });
-            document.addEventListener('touchstart', (e) => {
-                resetIdleTimer();
-            });
+            document.addEventListener('mousedown', resetIdleTimer);
+            document.addEventListener('touchstart', resetIdleTimer);
 
-            // Инициализация
-            moveEyesRandomly();
-            blinkRandomly();
-            scheduleNextBreath();
-            resetIdleTimer();
+            resumeIdleAnimations();
 
-            // Клики по частям тела
             bodyMain.addEventListener('click', (e) => {
-                if (e.target.closest('.arm') || e.target.closest('.legs') || isAnimating) return;
+                if (e.target.closest('.arm') || e.target.closest('.legs') || isAnimating || isAway) return;
                 stopIdleAnimations();
                 leftArm.classList.add('animate-wave-hello');
                 setTimeout(() => { mouthPath.setAttribute('d', SMILE_PATH); }, 100);
@@ -446,7 +442,7 @@
 
             rightArm.addEventListener('click', (e) => {
                 e.stopPropagation(); 
-                if (isAnimating) return;
+                if (isAnimating || isAway) return;
                 stopIdleAnimations();
                 rightArm.classList.add('animate-right-arm-grow');
                 setTimeout(() => {
@@ -457,7 +453,7 @@
 
             legsContainer.addEventListener('click', (e) => {
                 e.stopPropagation(); 
-                if (isAnimating) return;
+                if (isAnimating || isAway) return;
                 stopIdleAnimations();
                 bodyMain.classList.add('animate-jump-sharp');
                 document.getElementById('tildaContainer').classList.add('animate-tilda-leaf');
