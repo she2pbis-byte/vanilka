@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: Ночной режим</title>
+    <title>Геометрический персонаж: тильда-планирование</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -11,11 +11,10 @@
             --body-inner: #FFECD2;
             --stroke: #000000;
             --stroke-width: 2px;
-            --bg-color: #f0f0f0;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: #f0f0f0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -23,12 +22,6 @@
             margin: 0;
             overflow: hidden;
             touch-action: manipulation;
-            transition: background-color 0.3s ease;
-        }
-
-        /* Постоянный темный фон */
-        body.dark-mode {
-            background-color: #000000;
         }
 
         .character-wrapper {
@@ -38,126 +31,48 @@
             align-items: center;
             transform: scale(0.72); 
             transform-origin: center;
-            transition: transform 1s linear;
         }
 
-        /* --- Выключатель --- */
-        #lightSwitch {
+        .tilda-container {
             position: absolute;
-            right: 30px;
-            top: calc(50% - 80px); 
-            width: 60px;
-            height: 100px;
-            background: #ddd;
-            border: 3px solid #000;
-            border-radius: 8px;
-            display: none;
-            flex-direction: column;
-            justify-content: space-between;
+            top: -10px;
+            width: 120px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
             align-items: center;
-            padding: 10px 0;
-            cursor: pointer;
-            z-index: 100;
-            user-select: none;
-            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
-            transition: transform 0.1s ease, filter 0.3s ease, background 0.3s ease;
-        }
-
-        #lightSwitch.locked {
+            z-index: 1;
+            transform-origin: center center;
+            animation: tildaSwing 6s infinite ease-in-out;
             pointer-events: none;
-            cursor: default;
         }
 
-        /* Постоянная инверсия выключателя */
-        #lightSwitch.inverted {
-            background: #222;
-            border-color: #fff;
-            filter: invert(1);
+        /* Анимация тильды при прыжке с эффектом планирования */
+        @keyframes tildaLeafJump {
+            0% { transform: translateY(0) rotate(0deg); }
+            /* Этап 1: Подъем вместе с телом */
+            15% { transform: translateY(5px) rotate(0deg); }
+            35% { transform: translateY(-110px) rotate(0deg); } 
+            
+            /* Этап 2: Падение как лист (амплитуда 40px с наклоном краев) */
+            /* В крайне правом положении (translateX 40px) правый край выше (rotate -15deg) */
+            45% { transform: translateY(-100px) translateX(40px) rotate(-15deg); }
+            /* В крайне левом положении (translateX -40px) левый край выше (rotate 15deg) */
+            55% { transform: translateY(-80px) translateX(-40px) rotate(15deg); }
+            65% { transform: translateY(-60px) translateX(40px) rotate(-15deg); }
+            75% { transform: translateY(-40px) translateX(-40px) rotate(15deg); }
+            85% { transform: translateY(-20px) translateX(30px) rotate(-10deg); }
+            95% { transform: translateY(-5px) translateX(-15px) rotate(5deg); }
+            100% { transform: translateY(0) translateX(0) rotate(0deg); }
         }
 
-        .switch-label {
-            font-family: sans-serif;
-            font-weight: bold;
-            font-size: 12px;
-            color: #333;
+        .animate-tilda-leaf {
+            animation: tildaLeafJump 2.4s cubic-bezier(0.215, 0.61, 0.355, 1) forwards !important;
         }
-
-        .switch-toggle {
-            width: 30px;
-            height: 40px;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 4px;
-            position: relative;
-        }
-
-        .switch-toggle::after {
-            content: '';
-            position: absolute;
-            top: 4px; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 10px;
-            background: #000;
-            transition: top 0.1s steps(1);
-        }
-
-        .switch-off .switch-toggle::after {
-            top: auto;
-            bottom: 4px;
-        }
-
-        /* --- Фантомная кисть --- */
-        #ghostHand {
-            position: absolute;
-            right: -100px; 
-            top: calc(50% - 40px);
-            width: 40px; 
-            height: 26px;
-            z-index: 110;
-            pointer-events: none;
-            display: flex;
-            flex-direction: row-reverse;
-            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .ghost-arm-skin {
-            width: 14px;
-            height: 100%;
-            background: var(--body-inner);
-            border: 2px solid black;
-            border-left: none; 
-        }
-
-        .ghost-fingers {
-            width: 26px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .ghost-finger {
-            width: 100%;
-            height: 6px;
-            background: var(--body-inner);
-            border: 2px solid black;
-            border-right: none;
-            border-radius: 4px 0 0 4px;
-        }
-
-        /* --- Анимации ног --- */
-        @keyframes walkLegStep {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        .animate-walk-left { animation: walkLegStep 0.4s infinite ease-in-out; }
-        .animate-walk-right { animation: walkLegStep 0.4s infinite ease-in-out; animation-delay: 0.2s; }
 
         .body-main {
             position: relative;
+            margin-top: 25px; 
             width: 210px;
             height: 210px;
             background-color: var(--body-outer);
@@ -169,117 +84,188 @@
             z-index: 10;
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             cursor: pointer;
+            transition: transform 0.1s ease;
         }
 
-        .body-breath-active { animation: bodyBreathAnimation 3s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards; }
+        .body-breath-active {
+            animation: bodyBreathAnimation 3s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+        }
 
         @keyframes bodyBreathAnimation {
             0%, 100% { transform: scale(1); }
             40% { transform: scale(1.06); } 
         }
 
+        @keyframes jump {
+            0% { transform: translateY(0) scale(1, 1); }
+            15% { transform: translateY(5px) scale(1.1, 0.9); }
+            45% { transform: translateY(-110px) scale(0.9, 1.1); }
+            75% { transform: translateY(0) scale(1.05, 0.95); }
+            100% { transform: translateY(0) scale(1, 1); }
+        }
+
+        @keyframes legJump {
+            0% { transform: translateY(0); }
+            15% { transform: translateY(2px); }
+            45% { transform: translateY(-55px); }
+            75% { transform: translateY(0); }
+            100% { transform: translateY(0); }
+        }
+
+        .animate-jump {
+            animation: jump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
+        }
+
+        .animate-leg-jump {
+            animation: legJump 0.8s cubic-bezier(0.42, 0, 0.58, 1) !important;
+        }
+
         .face-area {
-            width: 154px; height: 154px;
+            width: 154px;
+            height: 154px;
             background-color: var(--body-inner);
             border: var(--stroke-width) solid var(--stroke);
             border-radius: 50%;
-            display: flex; flex-direction: column;
-            align-items: center; padding-top: 30px;
-            position: relative; overflow: hidden; z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 30px;
+            position: relative;
+            z-index: 2;
         }
 
-        .eyes-row { display: flex; gap: 18px; margin-bottom: 10px; }
+        .eyes-row {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 10px; 
+        }
+
         .eye {
-            width: 38px; height: 38px; background-color: #ffffff;
-            border: var(--stroke-width) solid var(--stroke); border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            position: relative; overflow: hidden; 
+            width: 38px;
+            height: 38px;
+            background-color: #ffffff;
+            border: var(--stroke-width) solid var(--stroke);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden; 
         }
 
-        .eye::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 0%;
-            background-color: var(--body-inner); border-bottom: 2px solid var(--stroke);
-            z-index: 10; transition: height 0.05s ease-in-out;
+        .mouth-svg {
+            width: 60px;
+            height: 25px;
+            overflow: visible;
         }
-        .eye.blink::after { height: 100%; }
 
-        .mouth-svg { width: 56px; height: 20px; overflow: visible; }
         .mouth-path {
-            fill: none; stroke: var(--stroke); stroke-width: 2px; stroke-linecap: round;
+            fill: none;
+            stroke: var(--stroke);
+            stroke-width: 2.5px;
+            stroke-linecap: round;
+            transition: d 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+
+        @keyframes mouthStretch {
+            0%, 100% { transform: scaleX(1); }
+            45% { transform: scaleX(1.15); }
+        }
+
+        .animate-mouth-jump {
+            animation: mouthStretch 0.8s ease-in-out;
+        }
+
         .pupil {
-            width: 16px; height: 16px; background-color: var(--stroke); border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            background-color: var(--stroke);
+            border-radius: 50%;
             animation: lookAround 8s infinite ease-in-out;
         }
 
         .arm {
-            position: absolute; width: 26px; height: 100px; top: 75%;
-            transition: transform 0.3s ease; pointer-events: auto;
+            position: absolute;
+            width: 26px;
+            height: 100px;
+            top: 75%;
+            transition: transform 0.3s ease;
             transform-origin: top center; 
         }
-        .arm-sleeve {
-            position: absolute; top: 0; left: 0; width: 100%; height: 35px;
-            background-color: var(--body-outer); border: var(--stroke-width) solid var(--stroke);
-        }
-        .arm-left { left: -18px; z-index: 20; transform: translateY(-50%) rotate(10deg); }
-        .arm-right { right: -18px; z-index: 20; transform: translateY(-50%) rotate(-10deg); }
 
-        .legs { display: flex; gap: 60px; margin-top: -33px; z-index: 5; }
+        .arm-sleeve {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 35px;
+            background-color: var(--body-outer);
+            border: var(--stroke-width) solid var(--stroke);
+            z-index: 5;
+        }
+
+        .arm-left { left: -18px; z-index: 20; transform: translateY(-50%) rotate(10deg); }
+        .arm-right { right: -18px; z-index: 20; transform: translateY(-50%) rotate(-10deg); cursor: pointer; }
+
+        @keyframes waveHello {
+            0% { transform: translateY(-50%) rotate(10deg); }
+            20% { transform: translateY(-50%) rotate(150deg); }
+            40% { transform: translateY(-50%) rotate(120deg); }
+            60% { transform: translateY(-50%) rotate(150deg); }
+            80% { transform: translateY(-50%) rotate(120deg); }
+            100% { transform: translateY(-50%) rotate(10deg); }
+        }
+
+        @keyframes rightArmGrow {
+            0% { transform: translateY(-50%) rotate(-10deg) scale(1); }
+            85% { transform: translateY(-50%) rotate(180deg) scale(1.5); } 
+            100% { transform: translateY(-50%) rotate(-10deg) scale(1); }  
+        }
+
+        .animate-right-arm-grow { animation: rightArmGrow 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; }
+        .animate-wave-hello { animation: waveHello 1.5s ease-in-out forwards; }
+
+        .legs { display: flex; gap: 60px; margin-top: -33px; z-index: 5; transition: transform 0.1s ease; }
         .leg {
             width: 22px; height: 75px; background-color: var(--body-inner); 
             border: var(--stroke-width) solid var(--stroke); border-bottom: none;
-            position: relative; cursor: pointer; transform-origin: top center;
+            position: relative; cursor: pointer;
         }
+
         .leg::before {
             content: ''; position: absolute; top: 0; left: -2px; width: 22px; height: 35px;
             background-color: var(--body-outer); border: var(--stroke-width) solid var(--stroke);
         }
+
         .leg::after {
-            content: ''; position: absolute; bottom: -44px; left: 50%; transform: translateX(-50%);
-            width: 38px; height: 52px; background-color: var(--body-inner);
-            border: var(--stroke-width) solid var(--stroke); 
-            border-radius: 50% 50% 40% 40% / 40% 40% 60% 60%;
+            content: ''; position: absolute; bottom: -38px; left: 50%; transform: translateX(-50%);
+            width: 36px; height: 48px; background-color: var(--body-inner);
+            border: var(--stroke-width) solid var(--stroke); border-radius: 50%;
         }
 
         @keyframes lookAround {
-            0%, 100% { transform: translate(0, 0); }
-            20% { transform: translate(-6px, 0); }
-            60% { transform: translate(6px, 0); }
+            0%, 10%, 90%, 100% { transform: translate(0, 0); }
+            20%, 35% { transform: translate(-6px, 0); }
+            65%, 80% { transform: translate(6px, 0); }
         }
-        .animate-look-hello { animation: lookStraightAndBig 1.5s ease-in-out forwards !important; }
-        @keyframes lookStraightAndBig { 0%, 100% { transform: scale(1); } 20%, 80% { transform: scale(1.3); } }
 
-        @keyframes waveHelloWithWobble {
-            0% { transform: translateY(-50%) rotate(10deg); }
-            20% { transform: translateY(-50%) rotate(140deg); }
-            30% { transform: translateY(-50%) rotate(160deg); }
-            40% { transform: translateY(-50%) rotate(140deg); }
-            50% { transform: translateY(-50%) rotate(160deg); }
-            60% { transform: translateY(-50%) rotate(140deg); }
-            70% { transform: translateY(-50%) rotate(160deg); }
-            100% { transform: translateY(-50%) rotate(10deg); }
+        @keyframes tildaSwing {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-3deg); }
         }
-        .animate-wave-hello { animation: waveHelloWithWobble 1.5s ease-in-out forwards; }
+
+        @keyframes lookStraightAndBig { 0%, 100% { transform: scale(1); } 20%, 80% { transform: scale(1.3); } }
+        .animate-look-hello { animation: lookStraightAndBig 1.5s ease-in-out forwards; }
+
     </style>
 </head>
 <body>
 
-    <div id="lightSwitch">
-        <span class="switch-label">ВКЛ</span>
-        <div class="switch-toggle"></div>
-        <span class="switch-label">ВЫКЛ</span>
-    </div>
-
-    <div id="ghostHand">
-        <div class="ghost-arm-skin"></div>
-        <div class="ghost-fingers">
-            <div class="ghost-finger"></div>
-            <div class="ghost-finger"></div>
-            <div class="ghost-finger"></div>
+    <div class="character-wrapper">
+        <div class="tilda-container" id="tildaContainer">
+            <svg viewBox="0 0 120 48" style="width:100%; height:100%">
+                <path d="M8,20 C20,4 44,8 60,20 C76,32 100,28 112,16 L112,32 C100,44 76,48 60,36 C44,24 20,20 8,32 Z" 
+                    fill="var(--body-outer)" stroke="var(--stroke)" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
         </div>
-    </div>
 
-    <div class="character-wrapper" id="charWrapper">
         <div class="body-main" id="bodyMain">
             <div id="leftArm" class="arm arm-left">
                 <div class="arm-sleeve"></div>
@@ -291,13 +277,13 @@
                 </div>
             </div>
             
-            <div class="face-area">
+            <div class="face-area" id="faceArea">
                 <div class="eyes-row">
-                    <div class="eye" id="eyeLeft"><div class="pupil"></div></div>
-                    <div class="eye" id="eyeRight"><div class="pupil"></div></div>
+                    <div class="eye"><div class="pupil"></div></div>
+                    <div class="eye"><div class="pupil"></div></div>
                 </div>
-                <svg class="mouth-svg" viewBox="0 0 56 20">
-                    <path id="mouthPath" class="mouth-path" d="M 0,10 L 56,10"></path>
+                <svg class="mouth-svg" viewBox="0 0 60 20">
+                    <path id="mouthPath" class="mouth-path" d="M 5,10 C 20,10 40,10 55,10" />
                 </svg>
             </div>
 
@@ -308,8 +294,8 @@
         </div>
 
         <div class="legs" id="legsContainer">
-            <div class="leg" id="legLeft"></div>
-            <div class="leg" id="legRight"></div>
+            <div class="leg"></div>
+            <div class="leg"></div>
         </div>
     </div>
 
@@ -317,181 +303,61 @@
         window.onload = function() {
             const bodyMain = document.getElementById('bodyMain');
             const legsContainer = document.getElementById('legsContainer');
-            const legLeft = document.getElementById('legLeft');
-            const legRight = document.getElementById('legRight');
-            const charWrapper = document.getElementById('charWrapper');
+            const tildaContainer = document.getElementById('tildaContainer');
             const mouthPath = document.getElementById('mouthPath');
             const leftArm = document.getElementById('leftArm');
+            const rightArm = document.getElementById('rightArm');
             const pupils = document.querySelectorAll('.pupil');
-            const eyes = document.querySelectorAll('.eye');
-            const lightSwitch = document.getElementById('lightSwitch');
-            const ghostHand = document.getElementById('ghostHand');
             
-            let isAnimating = false;
-            let isGone = false; 
-            let idleTimer = null;
-            let animationTimeoutId = null; 
-            let currentExitStage = 0; 
-            
-            const IDLE_TIME = 30000; 
-            const MOUTH_NEUTRAL = "M 0,10 L 56,10";
-            const MOUTH_SMILE = "M 0,5 Q 28,25 56,5";
+            let isAnimating = false; 
 
-            function blink() {
-                if (isGone || isAnimating) { setTimeout(blink, 1000); return; }
-                eyes.forEach(eye => eye.classList.add('blink'));
-                setTimeout(() => eyes.forEach(eye => eye.classList.remove('blink')), 70); 
-                setTimeout(blink, Math.random() * 8000 + 4000);
-            }
-            setTimeout(blink, 2000);
-
-            function startWalking() {
-                legLeft.classList.add('animate-walk-left');
-                legRight.classList.add('animate-walk-right');
-            }
-
-            function stopWalking() {
-                legLeft.classList.remove('animate-walk-left');
-                legRight.classList.remove('animate-walk-right');
-            }
-
-            function resetIdleTimer() {
-                if (idleTimer) clearTimeout(idleTimer);
-                if (isGone) return;
-                
-                if (currentExitStage >= 1 && currentExitStage <= 3) {
-                    stopAllTimeouts();
-                    isAnimating = true;
-                    startWalking();
-                    charWrapper.style.transition = "transform 0.4s ease-out"; 
-                    charWrapper.style.transform = "scale(0.72) translateX(0)";
-                    setTimeout(() => {
-                        stopWalking();
-                        isAnimating = false;
-                        currentExitStage = 0;
-                        resetIdleTimer();
-                    }, 400);
-                    return;
-                }
-                idleTimer = setTimeout(startExitAnimation, IDLE_TIME);
-            }
-
-            function stopAllTimeouts() {
-                if (animationTimeoutId) clearTimeout(animationTimeoutId);
-            }
-
-            function resetCharacter() {
-                stopAllTimeouts();
-                isGone = false;
-                isAnimating = false;
-                currentExitStage = 0;
-                
-                lightSwitch.style.display = 'none';
-                lightSwitch.classList.remove('switch-off', 'inverted', 'locked');
-                document.body.classList.remove('dark-mode');
-                ghostHand.style.right = '-100px';
-
-                charWrapper.style.transition = "none";
-                charWrapper.style.transform = "scale(0.72) translateX(0)";
-                
-                stopWalking();
-                pupils.forEach(p => {
-                    p.classList.remove('animate-look-hello');
-                    p.style.animation = 'lookAround 8s infinite ease-in-out';
-                });
-                resetIdleTimer();
-            }
-
-            function startExitAnimation() {
-                if (isAnimating || isGone) return;
-                isAnimating = true;
-                currentExitStage = 1;
-                
-                startWalking();
-                charWrapper.style.transition = "transform 0.5s linear"; 
-                charWrapper.style.transform = "scale(0.72) translateX(80px)";
-                
-                animationTimeoutId = setTimeout(() => {
-                    currentExitStage = 2;
-                    stopWalking();
-                    pupils.forEach(p => {
-                        p.style.animation = 'none';
-                        p.classList.add('animate-look-hello');
-                    });
-                    
-                    animationTimeoutId = setTimeout(() => {
-                        currentExitStage = 3;
-                        startWalking();
-                        charWrapper.style.transition = "transform 0.33s linear"; 
-                        charWrapper.style.transform = "scale(0.72) translateX(150vw)";
-                        
-                        animationTimeoutId = setTimeout(() => {
-                            isGone = true; 
-                            isAnimating = false;
-                            currentExitStage = 4;
-                            stopWalking();
-                            
-                            lightSwitch.style.display = 'flex';
-                            lightSwitch.classList.add('locked');
-
-                            setTimeout(() => {
-                                ghostHand.style.right = '30px'; 
-                                
-                                setTimeout(() => {
-                                    // ПАУЗА И ВХОД В ТЕМНЫЙ РЕЖИМ
-                                    document.body.classList.add('dark-mode');
-                                    lightSwitch.classList.add('inverted');
-                                    lightSwitch.classList.add('switch-off'); 
-
-                                    setTimeout(() => {
-                                        // Рука уходит, но фон и инверсия ОСТАЮТСЯ
-                                        ghostHand.style.right = '-100px';
-                                        
-                                        setTimeout(() => {
-                                            lightSwitch.classList.remove('locked');
-                                        }, 400); 
-                                    }, 100); // 0.1с паузы
-
-                                }, 400); 
-                            }, 500);
-                        }, 333);
-                    }, 2000);
-                }, 500);
-            }
-
-            window.addEventListener('mousedown', resetIdleTimer);
-            window.addEventListener('touchstart', resetIdleTimer);
-            window.addEventListener('keydown', resetIdleTimer);
-            window.addEventListener('mousemove', resetIdleTimer);
-
-            lightSwitch.addEventListener('click', resetCharacter);
+            const STRAIGHT_PATH = "M 5,10 C 20,10 40,10 55,10";
+            const SMILE_PATH = "M 5,10 C 15,18 45,18 55,10";
 
             function triggerBreath() {
-                if (isAnimating || isGone) { scheduleNextBreath(); return; }
+                if (isAnimating) { 
+                    scheduleNextBreath(); 
+                    return; 
+                }
                 bodyMain.classList.add('body-breath-active');
                 setTimeout(() => {
                     bodyMain.classList.remove('body-breath-active');
                     scheduleNextBreath();
                 }, 3000);
             }
-            function scheduleNextBreath() { setTimeout(triggerBreath, Math.random() * 5000 + 3000); }
+
+            function scheduleNextBreath() { 
+                setTimeout(triggerBreath, Math.random() * 5000 + 3000); 
+            }
+            
             scheduleNextBreath();
 
+            function interruptBreath() {
+                bodyMain.classList.remove('body-breath-active');
+            }
+
+            // ПРИВЕТСТВИЕ
             bodyMain.addEventListener('click', (e) => {
-                if (e.target.closest('.arm') || isAnimating || isGone) return;
+                if (e.target.closest('.arm') || isAnimating) return;
                 isAnimating = true;
-                resetIdleTimer();
+                interruptBreath();
+                
                 leftArm.classList.add('animate-wave-hello');
-                mouthPath.setAttribute('d', MOUTH_SMILE);
+                
+                setTimeout(() => {
+                    mouthPath.setAttribute('d', SMILE_PATH);
+                }, 100);
+                
                 pupils.forEach(p => {
                     p.style.animation = 'none';
                     void p.offsetHeight;
                     p.classList.add('animate-look-hello');
                 });
-                
+
                 setTimeout(() => {
                     leftArm.classList.remove('animate-wave-hello');
-                    mouthPath.setAttribute('d', MOUTH_NEUTRAL);
+                    mouthPath.setAttribute('d', STRAIGHT_PATH);
+                    
                     pupils.forEach(p => {
                         p.classList.remove('animate-look-hello');
                         p.style.animation = 'lookAround 8s infinite ease-in-out';
@@ -500,7 +366,42 @@
                 }, 1500);
             });
 
-            resetIdleTimer();
+            // РОСТ РУКИ
+            rightArm.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                if (isAnimating) return;
+                isAnimating = true;
+                interruptBreath();
+                rightArm.classList.add('animate-right-arm-grow');
+                setTimeout(() => {
+                    rightArm.classList.remove('animate-right-arm-grow');
+                    isAnimating = false;
+                }, 800); 
+            });
+
+            // ПРЫЖОК
+            legsContainer.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                if (isAnimating) return;
+                isAnimating = true;
+                interruptBreath();
+
+                bodyMain.classList.add('animate-jump');
+                legsContainer.classList.add('animate-leg-jump');
+                tildaContainer.classList.add('animate-tilda-leaf');
+                mouthPath.closest('.mouth-svg').classList.add('animate-mouth-jump');
+                
+                setTimeout(() => {
+                    bodyMain.classList.remove('animate-jump');
+                }, 800);
+
+                setTimeout(() => {
+                    legsContainer.classList.remove('animate-leg-jump');
+                    tildaContainer.classList.remove('animate-tilda-leaf');
+                    mouthPath.closest('.mouth-svg').classList.remove('animate-mouth-jump');
+                    isAnimating = false;
+                }, 2400);
+            });
         };
     </script>
 </body>
