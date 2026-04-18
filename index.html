@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Геометрический персонаж: Возврат справа</title>
+    <title>Геометрический персонаж: уход без масштабирования</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -29,29 +29,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            transform: scale(0.72) translateX(0); 
+            transform: scale(0.72); 
             transform-origin: center;
-            /* Плавный переход для возвращения (2 секунды) */
-            transition: transform 2s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        /* Анимация убегания вправо */
-        @keyframes runAway {
-            0% { transform: scale(0.72) translateX(0); }
-            15% { transform: scale(0.72) translateX(70px); } 
-            80% { transform: scale(0.72) translateX(70px); } 
-            100% { transform: scale(0.72) translateX(150vw); } 
-        }
-
-        .animate-run-away {
-            animation: runAway 3s forwards ease-in-out;
-            transition: none !important; 
-        }
-
-        /* Состояние за кадром справа (подготовка к возврату) */
-        .off-screen-right {
-            transition: none !important;
-            transform: scale(0.72) translateX(150vw) !important;
+        #sceneAnchor {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .tilda-container {
@@ -68,11 +54,15 @@
             pointer-events: none;
         }
 
+        /* Анимации прыжка */
         @keyframes tildaLeafJump {
-            0% { transform: translateY(0) rotate(0deg); }
-            10% { transform: translateY(15px) rotate(0deg); } 
-            25% { transform: translateY(-130px) rotate(0deg); } 
-            100% { transform: translateY(0) rotate(0deg); }
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            10% { transform: translateY(15px) translateX(0) rotate(0deg); } 
+            25% { transform: translateY(-130px) translateX(0) rotate(0deg); } 
+            35% { transform: translateY(-110px) translateX(25px) rotate(-12deg); }
+            55% { transform: translateY(-80px) translateX(-35px) rotate(18deg); }
+            85% { transform: translateY(-20px) translateX(10px) rotate(-5deg); }
+            100% { transform: translateY(0) translateX(0) rotate(0deg); }
         }
 
         .animate-tilda-leaf {
@@ -83,11 +73,38 @@
             0% { transform: translateY(0) scale(1, 1); }
             10% { transform: translateY(15px) scale(1.066, 0.933); }
             25% { transform: translateY(-130px) scale(0.95, 1.066); }
+            45% { transform: translateY(0) scale(1.033, 0.966); }
+            55% { transform: translateY(0) scale(1, 1); }
             100% { transform: translateY(0) scale(1, 1); }
+        }
+
+        @keyframes sharpLegJump {
+            0% { transform: translateY(0); }
+            10% { transform: translateY(5px); }
+            25% { transform: translateY(-70px); }
+            45% { transform: translateY(0); }
+            100% { transform: translateY(0); }
         }
 
         .animate-jump-sharp {
             animation: sharpJump 3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+        }
+
+        .animate-leg-jump-sharp {
+            animation: sharpLegJump 3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+        }
+
+        /* АНИМАЦИЯ ПОБЕГА: Используем только translateX, не затрагивая масштаб */
+        @keyframes escapeRun {
+            0% { transform: translateX(0); }
+            28.5% { transform: translateX(60px); } /* 1 сек */
+            85.7% { transform: translateX(60px); } /* пауза 2 сек */
+            100% { transform: translateX(150vw); } /* резкий уход за край */
+        }
+
+        .animate-escape {
+            /* Важно сохранить transform: scale(0.72) в анимации, если она перекрывает стиль класса */
+            animation: escapeRun 3.5s ease-in-out forwards !important;
         }
 
         .body-main {
@@ -161,7 +178,9 @@
             z-index: 10;
         }
 
-        .eye.blinking::after { top: 0; }
+        .eye.blinking::after {
+            top: 0;
+        }
 
         .mouth-svg {
             width: 60px;
@@ -174,7 +193,19 @@
             stroke: var(--stroke);
             stroke-width: 2.5px;
             stroke-linecap: round;
-            transition: d 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: d 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes mouthStretchSharp {
+            0% { transform: scaleX(1); }
+            10% { transform: scaleX(1.1); }
+            25% { transform: scaleX(0.9); }
+            45% { transform: scaleX(1.05); }
+            60% { transform: scaleX(1); }
+        }
+
+        .animate-mouth-jump-sharp {
+            animation: mouthStretchSharp 3s ease-out;
         }
 
         .pupil {
@@ -224,7 +255,7 @@
         .animate-right-arm-grow { animation: rightArmGrow 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; }
         .animate-wave-hello { animation: waveHello 1.5s ease-in-out forwards; }
 
-        .legs { display: flex; gap: 60px; margin-top: -33px; z-index: 5; }
+        .legs { display: flex; gap: 60px; margin-top: -33px; z-index: 5; transition: transform 0.1s ease; }
         .leg {
             width: 22px; height: 75px; background-color: var(--body-inner); 
             border: var(--stroke-width) solid var(--stroke); border-bottom: none;
@@ -251,55 +282,61 @@
 </head>
 <body>
 
-    <div class="character-wrapper" id="characterWrapper">
-        <div class="tilda-container" id="tildaContainer">
-            <svg viewBox="0 0 120 48" style="width:100%; height:100%">
-                <path d="M8,20 C20,4 44,8 60,20 C76,32 100,28 112,16 L112,32 C100,44 76,48 60,36 C44,24 20,20 8,32 Z" 
-                    fill="var(--body-outer)" stroke="var(--stroke)" stroke-width="2" stroke-linejoin="round"/>
-            </svg>
-        </div>
+    <div id="sceneAnchor">
+        <!-- Анимация применяется к этому контейнеру, сохраняя масштаб дочернего charWrapper -->
+        <div id="escapeContainer">
+            <div class="character-wrapper" id="charWrapper">
+                <div class="tilda-container" id="tildaContainer">
+                    <svg viewBox="0 0 120 48" style="width:100%; height:100%">
+                        <path d="M8,20 C20,4 44,8 60,20 C76,32 100,28 112,16 L112,32 C100,44 76,48 60,36 C44,24 20,20 8,32 Z" 
+                            fill="var(--body-outer)" stroke="var(--stroke)" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                </div>
 
-        <div class="body-main" id="bodyMain">
-            <div id="leftArm" class="arm arm-left">
-                <div class="arm-sleeve"></div>
-                <div style="position:absolute; top:33px; left:0; width:100%; height:41px; background:var(--body-inner); border-left:2px solid black; border-right:2px solid black;"></div>
-                <div style="position:absolute; top:72px; left:0; width:100%; height:26px; display:flex; justify-content:space-between;">
-                    <div style="width:6px; height:100%; background:var(--body-inner); border:2px solid black; border-top:none; border-radius:0 0 4px 4px;"></div>
-                    <div style="width:6px; height:100%; background:var(--body-inner); border:2px solid black; border-top:none; border-radius:0 0 4px 4px;"></div>
-                    <div style="width:6px; height:100%; background:var(--body-inner); border:2px solid black; border-top:none; border-radius:0 0 4px 4px;"></div>
+                <div class="body-main" id="bodyMain">
+                    <div id="leftArm" class="arm arm-left">
+                        <div class="arm-sleeve"></div>
+                        <div style="position:absolute; top:33px; left:0; width:100%; height:41px; background:var(--body-inner); border-left:2px solid black; border-right:2px solid black;"></div>
+                        <div style="position:absolute; top:72px; left:0; width:100%; height:26px; display:flex; justify-content:space-between;">
+                            <div style="width:6px; height:100%; background:var(--body-inner); border:2px solid black; border-top:none; border-radius:0 0 4px 4px;"></div>
+                            <div style="width:6px; height:100%; background:var(--body-inner); border:2px solid black; border-top:none; border-radius:0 0 4px 4px;"></div>
+                            <div style="width:6px; height:100%; background:var(--body-inner); border:2px solid black; border-top:none; border-radius:0 0 4px 4px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="face-area" id="faceArea">
+                        <div class="eyes-row">
+                            <div class="eye"><div class="pupil"></div></div>
+                            <div class="eye"><div class="pupil"></div></div>
+                        </div>
+                        <svg class="mouth-svg" viewBox="0 0 60 20">
+                            <path id="mouthPath" class="mouth-path" d="M 5,10 C 20,10 40,10 55,10" />
+                        </svg>
+                    </div>
+
+                    <div id="rightArm" class="arm arm-right">
+                        <div class="arm-sleeve"></div>
+                        <div style="position:absolute; top:33px; width:100%; height:75px; background:var(--body-inner); border:2px solid black; border-top:none; border-bottom-right-radius:40px;"></div>
+                    </div>
+                </div>
+
+                <div class="legs" id="legsContainer">
+                    <div class="leg"></div>
+                    <div class="leg"></div>
                 </div>
             </div>
-            
-            <div class="face-area" id="faceArea">
-                <div class="eyes-row">
-                    <div class="eye"><div class="pupil"></div></div>
-                    <div class="eye"><div class="pupil"></div></div>
-                </div>
-                <svg class="mouth-svg" viewBox="0 0 60 20">
-                    <path id="mouthPath" class="mouth-path" d="M 5,10 C 20,10 40,10 55,10" />
-                </svg>
-            </div>
-
-            <div id="rightArm" class="arm arm-right">
-                <div class="arm-sleeve"></div>
-                <div style="position:absolute; top:33px; width:100%; height:75px; background:var(--body-inner); border:2px solid black; border-top:none; border-bottom-right-radius:40px;"></div>
-            </div>
-        </div>
-
-        <div class="legs" id="legsContainer">
-            <div class="leg"></div>
-            <div class="leg"></div>
         </div>
     </div>
 
     <script>
         window.onload = function() {
-            const wrapper = document.getElementById('characterWrapper');
             const bodyMain = document.getElementById('bodyMain');
             const legsContainer = document.getElementById('legsContainer');
+            const tildaContainer = document.getElementById('tildaContainer');
             const mouthPath = document.getElementById('mouthPath');
             const leftArm = document.getElementById('leftArm');
             const rightArm = document.getElementById('rightArm');
+            const escapeContainer = document.getElementById('escapeContainer');
             const eyes = document.querySelectorAll('.eye');
             const pupils = document.querySelectorAll('.pupil');
             
@@ -307,67 +344,31 @@
             let moveEyesTimeout = null;
             let blinkTimeout = null;
             let breathTimeout = null;
-            let idleTimeout = null;
-            let isAway = false; 
+            let idleTimer = null;
+            let hasEscaped = false;
 
+            const IDLE_LIMIT = 30000; 
             const STRAIGHT_PATH = "M 5,10 C 20,10 40,10 55,10";
             const SMILE_PATH = "M 5,10 C 15,18 45,18 55,10";
-            const SAD_PATH = "M 5,14 C 15,8 45,8 55,14";
 
             function resetIdleTimer() {
-                if (isAway) {
-                    returnBack(); 
-                    return;
+                if (hasEscaped) return;
+                clearTimeout(idleTimer);
+                if (!isAnimating) {
+                    idleTimer = setTimeout(triggerEscape, IDLE_LIMIT);
                 }
-                clearTimeout(idleTimeout);
-                idleTimeout = setTimeout(startRunningAway, 15000); 
             }
 
-            function returnBack() {
-                if (!isAway) return;
-                isAway = false;
-
-                // 1. Убираем анимацию убегания и гарантируем, что персонаж зафиксирован за правым краем
-                wrapper.classList.remove('animate-run-away');
-                wrapper.classList.add('off-screen-right');
-                
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        // 2. Убираем класс фиксации и запускаем переход к центру
-                        wrapper.classList.remove('off-screen-right');
-                        wrapper.style.transform = 'scale(0.72) translateX(0)';
-                        
-                        // Меняем рот на грустный во время возвращения
-                        mouthPath.setAttribute('d', SAD_PATH);
-                        
-                        // Смотрит влево (в сторону движения)
-                        pupils.forEach(p => { p.style.transform = 'translateX(-8px)'; });
-
-                        // Через 2 секунды возвращаем обычное состояние
-                        setTimeout(() => {
-                            mouthPath.setAttribute('d', STRAIGHT_PATH);
-                            resumeIdleAnimations();
-                        }, 2000);
-                    });
-                });
-            }
-
-            function startRunningAway() {
-                if (isAnimating || isAway) return;
+            function triggerEscape() {
+                if (isAnimating || hasEscaped) return;
                 
                 stopIdleAnimations();
-                isAnimating = true;
+                hasEscaped = true;
+                // Применяем анимацию к контейнеру, чтобы не трогать масштаб персонажа
+                escapeContainer.classList.add('animate-escape');
                 
-                wrapper.style.transform = ''; 
-                wrapper.classList.add('animate-run-away');
-                
-                // Смотрит вправо перед рывком
-                pupils.forEach(p => { p.style.transform = 'translateX(8px)'; });
-
-                setTimeout(() => {
-                    isAway = true;
-                    isAnimating = false;
-                }, 3000);
+                // Взгляд в сторону бегства
+                pupils.forEach(p => { p.style.transform = 'translate(8px, 0)'; });
             }
 
             function stopIdleAnimations() {
@@ -375,40 +376,46 @@
                 clearTimeout(moveEyesTimeout);
                 clearTimeout(blinkTimeout);
                 clearTimeout(breathTimeout);
+                
                 bodyMain.classList.remove('body-breath-active');
                 eyes.forEach(e => e.classList.remove('blinking'));
+                
+                pupils.forEach(p => {
+                    p.style.transform = 'translate(0, 0)';
+                });
             }
 
             function resumeIdleAnimations() {
+                if (hasEscaped) return;
                 isAnimating = false;
                 scheduleNextBreath();
                 moveEyesRandomly();
                 blinkRandomly();
-                resetIdleTimer();
             }
 
             function moveEyesRandomly() {
-                if (isAnimating || isAway) return;
+                if (isAnimating || hasEscaped) return;
                 const x = (Math.random() - 0.5) * 12;
                 const y = (Math.random() - 0.5) * 8;
-                pupils.forEach(p => {
-                    p.style.transform = `translate(${x}px, ${y}px)`;
-                });
+                pupils.forEach(p => { p.style.transform = `translate(${x}px, ${y}px)`; });
                 moveEyesTimeout = setTimeout(moveEyesRandomly, Math.random() * 3000 + 2000);
             }
 
             function blinkRandomly() {
-                if (isAnimating || isAway) return;
+                if (isAnimating || hasEscaped) return;
+                const blinkDuration = 150;
                 eyes.forEach(e => e.classList.add('blinking'));
                 setTimeout(() => {
                     eyes.forEach(e => e.classList.remove('blinking'));
-                    if (isAnimating || isAway) return;
-                    blinkTimeout = setTimeout(blinkRandomly, Math.random() * 4000 + 3000);
-                }, 150);
+                    if (isAnimating || hasEscaped) return;
+                    const doubleBlink = Math.random() < 0.2;
+                    const nextInterval = doubleBlink ? 200 : (Math.random() * 4000 + 3000);
+                    blinkTimeout = setTimeout(blinkRandomly, nextInterval);
+                }, blinkDuration);
             }
 
             function triggerBreath() {
-                if (isAnimating || isAway) return;
+                if (isAnimating || hasEscaped) return;
                 bodyMain.classList.add('body-breath-active');
                 setTimeout(() => {
                     bodyMain.classList.remove('body-breath-active');
@@ -417,51 +424,63 @@
             }
 
             function scheduleNextBreath() { 
-                if (isAnimating || isAway) return;
+                if (isAnimating || hasEscaped) return;
                 breathTimeout = setTimeout(triggerBreath, Math.random() * 5000 + 3000); 
             }
 
-            document.addEventListener('mousedown', resetIdleTimer);
-            document.addEventListener('touchstart', resetIdleTimer);
+            window.addEventListener('mousedown', resetIdleTimer);
+            window.addEventListener('touchstart', resetIdleTimer);
 
-            resumeIdleAnimations();
+            moveEyesRandomly();
+            blinkRandomly();
+            scheduleNextBreath();
+            resetIdleTimer();
 
+            // Обработчики кликов
             bodyMain.addEventListener('click', (e) => {
-                if (e.target.closest('.arm') || e.target.closest('.legs') || isAnimating || isAway) return;
+                if (e.target.closest('.arm') || e.target.closest('.legs') || isAnimating || hasEscaped) return;
                 stopIdleAnimations();
                 leftArm.classList.add('animate-wave-hello');
                 setTimeout(() => { mouthPath.setAttribute('d', SMILE_PATH); }, 100);
                 pupils.forEach(p => { p.style.transform = 'translate(0, 0) scale(1.3)'; });
+
                 setTimeout(() => {
                     leftArm.classList.remove('animate-wave-hello');
                     mouthPath.setAttribute('d', STRAIGHT_PATH);
                     pupils.forEach(p => { p.style.transform = 'translate(0, 0) scale(1)'; });
                     resumeIdleAnimations();
+                    resetIdleTimer();
                 }, 1500);
             });
 
             rightArm.addEventListener('click', (e) => {
                 e.stopPropagation(); 
-                if (isAnimating || isAway) return;
+                if (isAnimating || hasEscaped) return;
                 stopIdleAnimations();
                 rightArm.classList.add('animate-right-arm-grow');
                 setTimeout(() => {
                     rightArm.classList.remove('animate-right-arm-grow');
                     resumeIdleAnimations();
+                    resetIdleTimer();
                 }, 800); 
             });
 
             legsContainer.addEventListener('click', (e) => {
                 e.stopPropagation(); 
-                if (isAnimating || isAway) return;
+                if (isAnimating || hasEscaped) return;
                 stopIdleAnimations();
                 bodyMain.classList.add('animate-jump-sharp');
-                document.getElementById('tildaContainer').classList.add('animate-tilda-leaf');
+                legsContainer.classList.add('animate-leg-jump-sharp');
+                tildaContainer.classList.add('animate-tilda-leaf');
+                mouthPath.closest('.mouth-svg').classList.add('animate-mouth-jump-sharp');
                 pupils.forEach(p => { p.style.transform = 'translate(0, -5px)'; });
                 setTimeout(() => {
                     bodyMain.classList.remove('animate-jump-sharp');
-                    document.getElementById('tildaContainer').classList.remove('animate-tilda-leaf');
+                    legsContainer.classList.remove('animate-leg-jump-sharp');
+                    tildaContainer.classList.remove('animate-tilda-leaf');
+                    mouthPath.closest('.mouth-svg').classList.remove('animate-mouth-jump-sharp');
                     resumeIdleAnimations();
+                    resetIdleTimer();
                 }, 3000);
             });
         };
